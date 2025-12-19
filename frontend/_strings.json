@@ -1,0 +1,74 @@
+[
+  {
+    "file": "app\\page.tsx",
+    "text": "مرحله ۳: وضعیت شغل و پیشرفت تحلیل"
+  },
+  {
+    "file": "app\\page.tsx",
+    "text": "نمایش سفر تحلیل به صورت روایی: تریاژ → شواهد → ترکیب، با شفافیت درباره پوشش ماژول‌ها و حالت دمو/واقعی."
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\page.tsx",
+    "text": "وضعیت شغل"
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\page.tsx",
+    "text": "نمای روایی از پیشرفت پایپ‌لاین: تریاژ → شواهد → ترکیب. تمام متن‌ها فارسی و راست‌به‌چپ هستند."
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\results\\page.tsx",
+    "text": "داشبورد نتایج"
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\results\\page.tsx",
+    "text": "فضای وضعیت‌روم: شناسنامه سند → پوشش → شواهد → تحلیل مشتق → سناریو → خروجی."
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\results\\page.tsx",
+    "text": "روندها"
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\results\\page.tsx",
+    "text": "نشانه‌های ضعیف"
+  },
+  {
+    "file": "app\\jobs\\[jobId]\\results\\page.tsx",
+    "text": "عدم قطعیت‌های بحرانی"
+  },
+  {
+    "file": "components\\dashboard\\DocumentProfileCard.tsx",
+    "text": "نوع سند"
+  },
+  {
+    "file": "components\\dashboard\\DocumentProfileCard.tsx",
+    "text": "حوزه"
+  },
+  {
+    "file": "components\\dashboard\\DocumentProfileCard.tsx",
+    "text": "افق زمانی"
+  },
+  {
+    "file": "components\\dashboard\\DocumentProfileCard.tsx",
+    "text": "سطح تحلیل"
+  },
+  {
+    "file": "components\\evidence\\EvidenceDrawer.tsx",
+    "text": "جستجو در شواهد..."
+  },
+  {
+    "file": "components\\forms\\InputUploadForm.tsx",
+    "text": "متن سند یا گزارش را اینجا وارد کنید..."
+  },
+  {
+    "file": "components\\forms\\InputUploadForm.tsx",
+    "text": ".pdf,.doc,.docx,.txt"
+  },
+  {
+    "file": "components\\job\\ClarificationPanel.tsx",
+    "text": "پاسخ کوتاه و دقیق به فارسی..."
+  },
+  {
+    "file": "components\\job\\JobHeader.tsx",
+    "text": "badge badge-success"
+  }
+]

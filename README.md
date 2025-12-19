@@ -40,6 +40,8 @@ cd frontend
 npm run dev
 ```
 
+فرانت‌اند نیازمند متغیر `NEXT_PUBLIC_API_BASE_URL` برای اتصال به بک‌اند (پیش‌فرض: `http://localhost:3001`).
+
 ## تست‌ها
 در مسیر بک‌اند:
 ```

@@ -5,7 +5,9 @@ import { repairJson } from '../../utils/jsonRepair';
 import { logger } from '../../logger';
 
 const openaiClient =
-  env.LLM_API_KEY && !env.DEMO_MODE ? new OpenAI({ apiKey: env.LLM_API_KEY }) : null;
+  env.LLM_API_KEY && !env.DEMO_MODE
+    ? new OpenAI({ apiKey: env.LLM_API_KEY, baseURL: env.LLM_BASE_URL })
+    : null;
 
 type CallArgs<T> = {
   prompt: string;
