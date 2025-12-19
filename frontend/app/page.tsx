@@ -1,5 +1,4 @@
 import { AppShell } from '../components/layout/AppShell';
-import { HealthStatus } from '../components/system/HealthStatus';
 import { InputUploadForm } from '../components/forms/InputUploadForm';
 
 export default function HomePage() {

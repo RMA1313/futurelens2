@@ -3,7 +3,6 @@
 import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AppShell } from '../../../components/layout/AppShell';
-import { HealthStatus } from '../../../components/system/HealthStatus';
 import { JobHeader } from '../../../components/job/JobHeader';
 import { StageProgress } from '../../../components/job/StageProgress';
 import { ModuleProgress } from '../../../components/job/ModuleProgress';
