@@ -1,0 +1,11 @@
+node_modules
+dist
+*.log
+.env
+.DS_Store
+/backend/node_modules
+/frontend/node_modules
+/backend/dist
+/frontend/.next
+/frontend/out
+/backend/data
