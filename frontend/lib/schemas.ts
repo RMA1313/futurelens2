@@ -117,6 +117,16 @@ export const ScenarioSchema = z.object({
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
 
+export const SteepdSchema = z.object({
+  social: z.array(z.string()).default([]),
+  technological: z.array(z.string()).default([]),
+  economic: z.array(z.string()).default([]),
+  environmental: z.array(z.string()).default([]),
+  political: z.array(z.string()).default([]),
+  defense: z.array(z.string()).default([])
+});
+export type Steepd = z.infer<typeof SteepdSchema>;
+
 export const ScenarioStatusSchema = z.object({
   status: z.enum(['ok', 'insufficient_data']),
   reason: z.string().optional(),
@@ -135,6 +145,9 @@ export type DocumentProfile = z.infer<typeof DocumentProfileSchema>;
 
 export const ReportSchema = z.object({
   executive_brief: z.string().optional(),
+  executive_summary: z.string().optional(),
+  executive_key_points: z.array(z.string()).optional(),
+  steepd: SteepdSchema.optional(),
   full_report: z.string().optional(),
   dashboard: z.object({
     document_profile: DocumentProfileSchema.optional(),

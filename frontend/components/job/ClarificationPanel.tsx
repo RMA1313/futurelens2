@@ -39,7 +39,7 @@ export function ClarificationPanel({ jobId, questions, onSubmitted }: Props) {
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>سوالات روشن‌سازی</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>سوالات</div>
         </div>
         <span className="badge badge-warning">نیاز به پاسخ</span>
       </div>

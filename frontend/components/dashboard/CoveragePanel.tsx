@@ -56,7 +56,7 @@ function CoverageItem({ entry, onSelect }: { entry: CoverageEntry; onSelect?: (m
         <div>
           <div style={{ fontWeight: 800, fontSize: 15 }}>{getModuleLabel(entry.module)}</div>
           <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>
-            {missing || 'اطلاعات کافی موجود است.'}
+            {missing }
           </div>
         </div>
         <span className={`badge ${getModuleStatusBadge(entry.status)}`}>

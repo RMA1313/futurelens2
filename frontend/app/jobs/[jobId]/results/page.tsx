@@ -18,6 +18,15 @@ import { formatDateTime, formatId } from '../../../../lib/format';
 
 type ViewState = 'loading' | 'ready' | 'not-ready' | 'error';
 
+const STEEPD_CATEGORIES = [
+  { key: 'social', title: 'اجتماعی' },
+  { key: 'technological', title: 'فناوری' },
+  { key: 'economic', title: 'اقتصادی' },
+  { key: 'environmental', title: 'محیط‌زیست' },
+  { key: 'political', title: 'سیاسی' },
+  { key: 'defense', title: 'دفاعی' }
+] as const;
+
 export default function ResultsPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
@@ -189,6 +198,18 @@ export default function ResultsPage() {
       </div>
     ) : null;
 
+  const executiveSummary = ((report as any)?.executive_summary ?? report?.dashboard?.executive_summary ?? '').trim();
+  const summaryKeyPoints = ((report as any)?.executive_key_points ?? report?.dashboard?.executive_key_points) as string[] | undefined;
+  const steepdSrc = (report as any)?.steepd ?? report?.dashboard?.steepd;
+  const steepdSections =
+    steepdSrc && typeof steepdSrc === 'object'
+      ? STEEPD_CATEGORIES.map((category) => ({
+          key: category.key,
+          title: category.title,
+          items: Array.isArray(steepdSrc[category.key]) ? steepdSrc[category.key] : []
+        })).filter((section) => section.items.length > 0)
+      : [];
+
   return (
     <AppShell
       title="داشبورد نتایج"
@@ -249,158 +270,263 @@ export default function ResultsPage() {
       ) : null}
 
       {view === 'ready' && report ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr',
-            gap: 12,
-            alignItems: 'start'
-          }}
-        >
-          <div className="section-grid">
-            <DocumentProfileCard
-              profile={report.dashboard?.document_profile}
-              highlight={highlightPanelId === 'panel-document' || diffSets.profile}
-              panelId="panel-document"
-            />
-            <CoveragePanel
-              coverage={report.dashboard?.coverage}
-              onSelect={handleCoverageSelect}
-              highlight={highlightPanelId === 'panel-coverage' || diffSets.coverage}
-            />
-
-            <AnalysisPanel
-              title="روندها"
-              items={report.dashboard?.trends?.map((t, index) => ({
-                id: t.id,
-                key: t.id ?? `${hashTrend(t)}-${index}`,
-                title: t.label,
-                rationale: t.rationale,
-                category: t.category,
-                direction: t.direction,
-                strength: t.strength,
-                label_type: t.label_type as any,
-                confidence: t.confidence,
-                evidence_ids: t.evidence_ids
-              }))}
-              evidence={evidence}
-              onEvidenceClick={setEvidenceOpenId}
-              filter={filterState}
-              changedIds={diffSets.trends}
-              panelId="panel-trends"
-              highlight={highlightPanelId === 'panel-trends'}
-              showTrendMeta
-            />
-
-            <AnalysisPanel
-              title="نشانه‌های ضعیف"
-              items={report.dashboard?.weak_signals?.map((w, index) => ({
-                id: w.id,
-                key: w.id ?? `${hashWeakSignal(w)}-${index}`,
-                title: w.signal,
-                rationale: w.rationale,
-                evolution: w.evolution,
-                label_type: w.label_type as any,
-                confidence: w.confidence,
-                evidence_ids: w.evidence_ids
-              }))}
-              evidence={evidence}
-              onEvidenceClick={setEvidenceOpenId}
-              filter={filterState}
-              changedIds={diffSets.weakSignals}
-              panelId="panel-weak-signals"
-              highlight={highlightPanelId === 'panel-weak-signals'}
-            />
-
-            <AnalysisPanel
-              title="عدم قطعیت‌های کلیدی"
-              items={report.dashboard?.critical_uncertainties?.map((u, index) => ({
-                id: u.id,
-                key: u.id ?? `${hashUncertainty(u)}-${index}`,
-                title: u.driver,
-                rationale: u.uncertainty_reason,
-                impact: u.impact,
-                label_type: u.label_type as any,
-                confidence: u.confidence,
-                evidence_ids: u.evidence_ids
-              }))}
-              evidence={evidence}
-              onEvidenceClick={setEvidenceOpenId}
-              filter={filterState}
-              changedIds={diffSets.uncertainties}
-              panelId="panel-uncertainties"
-              highlight={highlightPanelId === 'panel-uncertainties'}
-            />
-
-            <ScenariosPanel
-              scenarios={report.dashboard?.scenarios?.map((s, index) => ({
-                ...s,
-                key: s.id ?? `${hashScenario(s)}-${index}`
-              }))}
-              evidence={evidence}
-              onEvidenceClick={setEvidenceOpenId}
-              filter={filterState}
-              changedIds={diffSets.scenarios}
-              panelId="panel-scenarios"
-              highlight={highlightPanelId === 'panel-scenarios'}
-            />
-
-            {compareSection}
-          </div>
-
-          <div className="section-grid">
-            <ControlsPanel
-              minConfidence={minConfidence}
-              onConfidenceChange={setMinConfidence}
-              labels={labels}
-              onToggleLabel={toggleLabel}
-              focusMode={focusMode}
-              onToggleFocus={() => setFocusMode((p) => !p)}
-              compareMode={compareMode}
-              onToggleCompare={() => setCompareMode((p) => !p)}
-            />
-
-            <div className={`card ${highlightPanelId === 'panel-evidence' ? 'panel-highlight' : ''}`} id="panel-evidence">
-              <div className="headline" style={{ fontSize: 18 }}>
-                مرور شواهد
+        <>
+          {executiveSummary ? (
+            <section
+              className="card"
+              style={{
+                position: 'relative',
+                padding: '28px 24px',
+                background: 'var(--color-surface-3)',
+                border: '1px solid rgba(252, 196, 0, 0.25)',
+                overflow: 'hidden'
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: '16px 16px auto auto',
+                  width: 4,
+                  height: 'calc(100% - 32px)',
+                  background: 'var(--color-accent)'
+                }}
+              />
+              <div style={{ position: 'relative', direction: 'rtl' }}>
+                <div className="headline" style={{ fontSize: 22, fontWeight: 700 }}>
+                  چکیده مدیریتی
+                </div>
+                <p className="subhead" style={{ marginTop: 6, fontSize: 14 }}>
+                  برداشت اجرایی از مهم‌ترین نکات و پیام‌های گزارش
+                </p>
+                <p
+                  className="subhead"
+                  style={{
+                    marginTop: 18,
+                    fontSize: 16,
+                    lineHeight: 1.95,
+                    textAlign: 'justify',
+                    maxWidth: '100%'
+                  }}
+                >
+                  {executiveSummary}
+                </p>
+                {summaryKeyPoints?.length ? (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>نکات کلیدی</div>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingInlineStart: 18,
+                        lineHeight: 1.6,
+                        textAlign: 'justify'
+                      }}
+                    >
+                      {summaryKeyPoints.map((point, index) => (
+                        <li key={`summary-point-${index}`} style={{ marginBottom: 4 }}>
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
-              <div className="subhead">
-                برای دیدن منبع هر ادعا، روی برچسب شاهد کلیک کنید.
+            </section>
+          ) : null}
+
+          {steepdSections.length ? (
+            <section className="card">
+              <div className="headline" style={{ fontSize: 20, marginBottom: 10 }}>
+                تحلیل STEEPD
               </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: 10,
+                  direction: 'rtl'
+                }}
+              >
+                {steepdSections.map((section) => (
+                  <article
+                    key={section.key}
+                    className="card"
+                    style={{ padding: 12, background: 'var(--color-surface-2)' }}
+                  >
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>{section.title}</div>
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingInlineStart: 18,
+                        lineHeight: 1.5,
+                        textAlign: 'justify'
+                      }}
+                    >
+                      {section.items.map((item, index) => (
+                        <li key={`${section.key}-${index}`} style={{ marginBottom: 4 }}>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 1fr',
+              gap: 12,
+              alignItems: 'start'
+            }}
+          >
+            <div className="section-grid">
+              <DocumentProfileCard
+                profile={report.dashboard?.document_profile}
+                highlight={highlightPanelId === 'panel-document' || diffSets.profile}
+                panelId="panel-document"
+              />
+              <CoveragePanel
+                coverage={report.dashboard?.coverage}
+                onSelect={handleCoverageSelect}
+                highlight={highlightPanelId === 'panel-coverage' || diffSets.coverage}
+              />
+
+              <AnalysisPanel
+                title="روندها"
+                items={report.dashboard?.trends?.map((t, index) => ({
+                  id: t.id,
+                  key: t.id ?? `${hashTrend(t)}-${index}`,
+                  title: t.label,
+                  rationale: t.rationale,
+                  category: t.category,
+                  direction: t.direction,
+                  strength: t.strength,
+                  label_type: t.label_type as any,
+                  confidence: t.confidence,
+                  evidence_ids: t.evidence_ids
+                }))}
+                evidence={evidence}
+                onEvidenceClick={setEvidenceOpenId}
+                filter={filterState}
+                changedIds={diffSets.trends}
+                panelId="panel-trends"
+                highlight={highlightPanelId === 'panel-trends'}
+                showTrendMeta
+              />
+
+              <AnalysisPanel
+                title="نشانه‌های ضعیف"
+                items={report.dashboard?.weak_signals?.map((w, index) => ({
+                  id: w.id,
+                  key: w.id ?? `${hashWeakSignal(w)}-${index}`,
+                  title: w.signal,
+                  rationale: w.rationale,
+                  evolution: w.evolution,
+                  label_type: w.label_type as any,
+                  confidence: w.confidence,
+                  evidence_ids: w.evidence_ids
+                }))}
+                evidence={evidence}
+                onEvidenceClick={setEvidenceOpenId}
+                filter={filterState}
+                changedIds={diffSets.weakSignals}
+                panelId="panel-weak-signals"
+                highlight={highlightPanelId === 'panel-weak-signals'}
+              />
+
+              <AnalysisPanel
+                title="عدم قطعیت‌های کلیدی"
+                items={report.dashboard?.critical_uncertainties?.map((u, index) => ({
+                  id: u.id,
+                  key: u.id ?? `${hashUncertainty(u)}-${index}`,
+                  title: u.driver,
+                  rationale: u.uncertainty_reason,
+                  impact: u.impact,
+                  label_type: u.label_type as any,
+                  confidence: u.confidence,
+                  evidence_ids: u.evidence_ids
+                }))}
+                evidence={evidence}
+                onEvidenceClick={setEvidenceOpenId}
+                filter={filterState}
+                changedIds={diffSets.uncertainties}
+                panelId="panel-uncertainties"
+                highlight={highlightPanelId === 'panel-uncertainties'}
+              />
+
+              <ScenariosPanel
+                scenarios={report.dashboard?.scenarios?.map((s, index) => ({
+                  ...s,
+                  key: s.id ?? `${hashScenario(s)}-${index}`
+                }))}
+                evidence={evidence}
+                onEvidenceClick={setEvidenceOpenId}
+                filter={filterState}
+                changedIds={diffSets.scenarios}
+                panelId="panel-scenarios"
+                highlight={highlightPanelId === 'panel-scenarios'}
+              />
+
+              {compareSection}
             </div>
 
-            {clarifications.length ? (
-              <div className="card">
-                <div className="headline" style={{ fontSize: 18 }}>
-                  ویرایش و اجرای مجدد
-                </div>
-                <ClarificationPanel jobId={jobId} questions={clarifications} onSubmitted={startClarificationPolling} />
-                {clarificationState === 'updating' ? (
-                  <div className="pill" style={{ marginTop: 10 }}>
-                    در حال دریافت نسخه به‌روزشده گزارش...
-                  </div>
-                ) : null}
-                {clarificationState === 'updated' ? (
-                  <div className="pill" style={{ marginTop: 10 }}>
-                    گزارش به‌روزرسانی شد و تغییرات برجسته شدند.
-                  </div>
-                ) : null}
-                {clarificationState === 'timeout' ? (
-                  <div className="pill" style={{ marginTop: 10 }}>
-                    به‌روزرسانی در زمان مقرر دریافت نشد. کمی بعد دوباره تلاش کنید.
-                  </div>
-                ) : null}
-                {clarificationState === 'error' ? (
-                  <div className="pill" style={{ marginTop: 10, color: '#ff9b9b' }}>
-                    خطا در دریافت نسخه جدید گزارش.
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+            <div className="section-grid">
+              <ControlsPanel
+                minConfidence={minConfidence}
+                onConfidenceChange={setMinConfidence}
+                labels={labels}
+                onToggleLabel={toggleLabel}
+                focusMode={focusMode}
+                onToggleFocus={() => setFocusMode((p) => !p)}
+                compareMode={compareMode}
+                onToggleCompare={() => setCompareMode((p) => !p)}
+              />
 
-            <ExportPanel report={report} jobId={jobId} />
+              <div className={`card ${highlightPanelId === 'panel-evidence' ? 'panel-highlight' : ''}`} id="panel-evidence">
+                <div className="headline" style={{ fontSize: 18 }}>
+                  مرور شواهد
+                </div>
+                <div className="subhead">
+                  برای دیدن منبع هر ادعا، روی برچسب شاهد کلیک کنید.
+                </div>
+              </div>
+
+              {clarifications.length ? (
+                <div className="card">
+                  <div className="headline" style={{ fontSize: 18 }}>
+                    ویرایش و اجرای مجدد
+                  </div>
+                  <ClarificationPanel jobId={jobId} questions={clarifications} onSubmitted={startClarificationPolling} />
+                  {clarificationState === 'updating' ? (
+                    <div className="pill" style={{ marginTop: 10 }}>
+                      در حال دریافت نسخه به‌روزشده گزارش...
+                    </div>
+                  ) : null}
+                  {clarificationState === 'updated' ? (
+                    <div className="pill" style={{ marginTop: 10 }}>
+                      گزارش به‌روزرسانی شد و تغییرات برجسته شدند.
+                    </div>
+                  ) : null}
+                  {clarificationState === 'timeout' ? (
+                    <div className="pill" style={{ marginTop: 10 }}>
+                      به‌روزرسانی در زمان مقرر دریافت نشد. کمی بعد دوباره تلاش کنید.
+                    </div>
+                  ) : null}
+                  {clarificationState === 'error' ? (
+                    <div className="pill" style={{ marginTop: 10, color: '#ff9b9b' }}>
+                      خطا در دریافت نسخه جدید گزارش.
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <ExportPanel report={report} jobId={jobId} />
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
 
       <EvidenceDrawer

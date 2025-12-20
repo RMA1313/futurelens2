@@ -9,6 +9,15 @@ import { PrintButton } from './components/PrintButton';
 
 const formatConfidence = (value?: number) => (value !== undefined ? formatNumber(value) : 'نامشخص');
 
+const STEEPD_CATEGORIES = [
+  { key: 'social', title: 'اجتماعی' },
+  { key: 'technological', title: 'فناوری' },
+  { key: 'economic', title: 'اقتصادی' },
+  { key: 'environmental', title: 'محیط‌زیست' },
+  { key: 'political', title: 'سیاسی' },
+  { key: 'defense', title: 'دفاعی' }
+] as const;
+
 type PrintPageProps = {
   params: { jobId: string };
 };
@@ -28,6 +37,14 @@ export default async function PrintPage({ params }: PrintPageProps) {
   const weakSignals = report?.dashboard.weak_signals ?? [];
   const uncertainties = report?.dashboard.critical_uncertainties ?? [];
   const scenarios = report?.dashboard.scenarios ?? [];
+  const summary = report?.executive_summary?.trim();
+  const steepdSections = report?.steepd
+    ? STEEPD_CATEGORIES.map((category) => ({
+        key: category.key,
+        title: category.title,
+        items: report.steepd[category.key] ?? []
+      })).filter((section) => section.items.length > 0)
+    : [];
 
   const insightSections = [
     {
@@ -144,6 +161,64 @@ export default async function PrintPage({ params }: PrintPageProps) {
             <div className="empty-state">در حال دریافت گزارش برای چاپ...</div>
           ) : (
             <>
+              {summary ? (
+                <section className="section print-section">
+                  <div className="section-heading">
+                    <span className="section-number">۰۱</span>
+                    <div>
+                      <p className="section-title">چکیده مدیریتی</p>
+                      <p className="section-subtitle" style={{ marginTop: 0 }}>
+                        برداشت سریع از نکات اصلی گزارش
+                      </p>
+                    </div>
+                  </div>
+                  <p className="subhead" style={{ marginTop: 12, textAlign: 'justify', lineHeight: 1.7 }}>
+                    {summary}
+                  </p>
+                </section>
+              ) : null}
+              {steepdSections.length ? (
+                <section className="section print-section">
+                  <div className="section-heading">
+                    <span className="section-number">۰۲</span>
+                    <div>
+                      <p className="section-title">تحلیل STEEPD</p>
+                      <p className="section-subtitle" style={{ marginTop: 0 }}>
+                        تمرکز بر عوامل اجتماعی، فناوری، اقتصادی، محیط‌زیستی، سیاسی و دفاعی
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: 12
+                    }}
+                  >
+                    {steepdSections.map((section) => (
+                      <article key={section.key} className="insight-card" style={{ padding: '12px' }}>
+                        <header>
+                          <div>
+                            <p className="insight-card__title" style={{ fontSize: 16 }}>
+                              {section.title}
+                            </p>
+                          </div>
+                        </header>
+                        <ul
+                          dir="rtl"
+                          style={{ margin: 0, paddingInlineStart: 18, lineHeight: 1.6, textAlign: 'justify' }}
+                        >
+                          {section.items.map((item, index) => (
+                            <li key={`${section.key}-${index}`} style={{ marginBottom: 6 }}>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
               <section className="cover-block section print-section">
                 <div>
                   <p className="cover-title">چشم‌انداز راهبردی آینده</p>

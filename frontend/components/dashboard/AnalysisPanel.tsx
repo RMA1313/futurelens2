@@ -155,9 +155,7 @@ export function AnalysisPanel({
               </div>
               {trendMeta ? (
                 <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span className="pill">
-                    جهت: {trendMeta.directionLabel} {trendMeta.arrow}
-                  </span>
+
                   <span className="pill">شدت: {trendMeta.strengthLabel}</span>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {Array.from({ length: 3 }).map((_, idx) => (
@@ -176,7 +174,7 @@ export function AnalysisPanel({
                 </div>
               ) : null}
               <div style={{ color: 'var(--color-text-muted)', fontSize: 13, marginTop: 6, lineHeight: 1.7 }}>
-                {item.rationale || item.impact || item.evolution || 'جزئیات تکمیلی برای این مورد ثبت نشده است.'}
+                {item.rationale || item.impact || item.evolution }
               </div>
               {item.indicators?.length ? (
                 <div style={{ marginTop: 8, fontSize: 13 }}>

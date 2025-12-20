@@ -97,9 +97,22 @@ export const ScenarioSchema = z.object({
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
 
+export const SteepdSchema = z.object({
+  social: z.array(z.string()).default([]),
+  technological: z.array(z.string()).default([]),
+  economic: z.array(z.string()).default([]),
+  environmental: z.array(z.string()).default([]),
+  political: z.array(z.string()).default([]),
+  defense: z.array(z.string()).default([])
+});
+export type Steepd = z.infer<typeof SteepdSchema>;
+
 export const OutputComposerSchema = z.object({
   executive_brief: z.string(),
+  executive_summary: z.string().optional(),
+  executive_key_points: z.array(z.string()).optional(),
   full_report: z.string(),
+  steepd: SteepdSchema.optional(),
   dashboard: z.object({
     document_profile: DocumentClassifierSchema,
     coverage: z.array(CoverageEntrySchema),
