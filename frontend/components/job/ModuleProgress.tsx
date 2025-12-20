@@ -59,7 +59,7 @@ export function ModuleProgress({ modules }: { modules: ModuleItem[] }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span className={`badge ${statusMap[m.status].badge}`}>{statusMap[m.status].label}</span>
-              {m.done ? <span className="pill">تکمیل</span> : <span className="pill">در حال اجرا</span>}
+              {m.done ? <span className="pill">تکمیل شد</span> : <span className="pill">در حال اجرا</span>}
             </div>
           </div>
         </div>

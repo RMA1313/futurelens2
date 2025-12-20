@@ -1,22 +1,48 @@
 import React from 'react';
 import { Scenario, EvidenceItem } from '../../lib/schemas';
+import { formatId, formatNumber } from '../../lib/format';
+
+function hashScenario(item: Scenario) {
+  return [
+    item.title,
+    item.summary,
+    (item.implications ?? []).join(','),
+    (item.indicators ?? []).join(','),
+    item.confidence,
+    (item.evidence_ids ?? []).join(',')
+  ].join('|');
+}
 
 export function ScenariosPanel({
   scenarios,
   evidence,
   onEvidenceClick,
-  filter
+  filter,
+  changedIds,
+  panelId,
+  highlight
 }: {
   scenarios?: Scenario[];
   evidence?: EvidenceItem[];
   onEvidenceClick?: (id: string) => void;
-  filter: { minConfidence: number; labels: Record<string, boolean>; focusMode: boolean; compareIds: string[]; onToggleCompare: (id: string) => void };
+  filter: {
+    minConfidence: number;
+    labels: Record<string, boolean>;
+    focusMode: boolean;
+    compareIds: string[];
+    onToggleCompare: (id: string) => void;
+  };
+  changedIds?: Set<string>;
+  panelId?: string;
+  highlight?: boolean;
 }) {
   if (!scenarios || !scenarios.length) {
     return (
       <div className="card">
-        <div className="headline" style={{ fontSize: 20 }}>سناریوها</div>
-        <p className="subhead">داده سناریو در دسترس نیست.</p>
+        <div className="headline" style={{ fontSize: 20 }}>
+          سناریوها
+        </div>
+        <p className="subhead">هنوز سناریویی تولید نشده است.</p>
       </div>
     );
   }
@@ -27,18 +53,27 @@ export function ScenariosPanel({
   });
 
   return (
-    <div className="card">
-      <div className="headline" style={{ fontSize: 20 }}>سناریوها</div>
+    <div className={`card ${highlight ? 'panel-highlight' : ''}`} id={panelId}>
+      <div className="headline" style={{ fontSize: 20 }}>
+        سناریوها
+      </div>
       <div className="section-grid">
-        {filtered.map((s) => {
-          const isCompared = filter.compareIds.includes(s.id);
+        {filtered.map((s, index) => {
+          const isCompared = filter.compareIds.includes(changeKey);
+          const changeKey = s.id || `${hashScenario(s)}-${index}`;
+          const isChanged = changedIds?.has(changeKey) || (s.id ? changedIds?.has(s.id) : false);
           return (
             <div
-              key={s.id}
+              key={changeKey}
               className="card"
               style={{
                 background: 'var(--color-surface-2)',
-                borderColor: isCompared ? 'rgba(106,216,255,0.5)' : undefined,
+                borderColor: isCompared
+                  ? 'rgba(106,216,255,0.5)'
+                  : isChanged
+                    ? 'rgba(240,192,90,0.6)'
+                    : undefined,
+                boxShadow: isChanged ? '0 0 0 1px rgba(240,192,90,0.4)' : undefined,
                 opacity: filter.focusMode && !isCompared ? 0.8 : 1
               }}
             >
@@ -61,7 +96,7 @@ export function ScenariosPanel({
               ) : null}
               {s.confidence !== undefined ? (
                 <div style={{ marginTop: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  اطمینان: {s.confidence.toFixed(2)}
+                  اطمینان: {formatNumber(s.confidence)}
                 </div>
               ) : null}
               {s.evidence_ids?.length ? (
@@ -74,13 +109,13 @@ export function ScenariosPanel({
                       onClick={() => onEvidenceClick?.(eid)}
                       style={{ cursor: 'pointer' }}
                     >
-                      شاهد {eid}
+                      شاهد {formatId(eid)}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  شاهد صریح ارائه نشده است.
+                  شاهدی برای این سناریو ثبت نشده است.
                 </div>
               )}
               <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -88,16 +123,16 @@ export function ScenariosPanel({
                   type="button"
                   className="button button-secondary"
                   style={{ padding: '8px 12px' }}
-                  onClick={() => filter.onToggleCompare(s.id)}
+                  onClick={() => filter.onToggleCompare(changeKey)}
                 >
-                  {isCompared ? 'حذف از مقایسه' : 'مقایسه'}
+                  {isCompared ? 'خروج از مقایسه' : 'مقایسه'}
                 </button>
               </div>
             </div>
           );
         })}
       </div>
-      {!filtered.length ? <p className="subhead">فیلترها همه سناریوها را پنهان کرده‌اند.</p> : null}
+      {!filtered.length ? <p className="subhead">با فیلترهای فعلی، سناریویی برای نمایش وجود ندارد.</p> : null}
     </div>
   );
 }

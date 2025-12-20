@@ -3,9 +3,11 @@ import { InputUploadForm } from '../components/forms/InputUploadForm';
 
 export default function HomePage() {
   return (
-    <AppShell title="ورود داده و آغاز تحلیل" subtitle="">
+    <AppShell title="ورودی و بارگذاری تحلیل" subtitle="">
       <section className="card">
-        <h2 className="headline" style={{ fontSize: 20 }}>📝 ارسال متن یا فایل</h2>
+        <h2 className="headline" style={{ fontSize: 20 }}>
+          متن یا فایل را برای تحلیل ارسال کنید
+        </h2>
         <InputUploadForm />
       </section>
     </AppShell>

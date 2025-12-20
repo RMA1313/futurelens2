@@ -12,40 +12,67 @@ import { runPipeline } from '../../pipelines';
 import { persistJob, loadJob } from '../storage/sqlite';
 import { AppError } from '../../utils/errors';
 import { normalizePersianText } from '../../utils/chunking';
+import { extractTextFromFile, ExtractionMeta } from '../../utils/text-extract';
 
 const runningJobs = new Set<string>();
 
-function ensureTextFromRequest(req: AnalyzeRequest): string {
-  if (req.text && req.text.trim().length > 0) return normalizePersianText(req.text);
-  if (req.fileBuffer) {
-    return normalizePersianText(req.fileBuffer.toString('utf-8'));
+async function ensureTextFromRequest(
+  req: AnalyzeRequest
+): Promise<{ text: string; extraction: ExtractionMeta }> {
+  if (req.text && req.text.trim().length > 0) {
+    const cleaned = normalizePersianText(req.text);
+    return {
+      text: cleaned,
+      extraction: {
+        extracted_chars: cleaned.length,
+        extractor_used: 'plain-text',
+        pages_detected: 0,
+        is_scanned_heuristic: false
+      }
+    };
   }
-  throw new AppError('متن یا فایل معتبر ارسال نشده است', 400);
+  if (req.fileBuffer) {
+    const extracted = await extractTextFromFile(req.fileBuffer, req.fileName);
+    return { text: normalizePersianText(extracted.text), extraction: extracted.meta };
+  }
+  throw new AppError('متن یا فایل برای تحلیل ارسال نشده است.', 400);
 }
 
 export async function createJob(rawPayload: Partial<AnalyzeRequest>): Promise<JobData> {
   const parsed = AnalyzeRequestSchema.parse(rawPayload);
-  const text = ensureTextFromRequest(parsed);
+  let text = '';
+  let extraction: ExtractionMeta | undefined;
+  let extractionError: string | undefined;
+  try {
+    const result = await ensureTextFromRequest(parsed);
+    text = result.text;
+    extraction = result.extraction;
+  } catch (err) {
+    extractionError = err instanceof AppError ? err.message : 'خطا در استخراج متن.';
+  }
   const now = new Date().toISOString();
   const job: JobData = {
     id: `job_${nanoid(10)}`,
-    status: JobStatusSchema.enum.queued,
-    progress: 0,
+    status: extractionError ? JobStatusSchema.enum.failed : JobStatusSchema.enum.queued,
+    progress: extractionError ? 1 : 0,
     input: {
-      text,
-      fileName: parsed.fileName
+      text: text || undefined,
+      fileName: parsed.fileName,
+      extraction
     },
     chunks: [],
     outputs: {},
     clarifications: { questions: [], answers: [] },
     report: undefined,
-    error: undefined,
+    error: extractionError,
     demoMode: env.DEMO_MODE,
     created_at: now,
     updated_at: now
   };
   persistJob(job);
-  queueJob(job.id);
+  if (!extractionError) {
+    queueJob(job.id);
+  }
   return job;
 }
 
@@ -58,7 +85,7 @@ export async function submitClarifications(
   answers: { questionId: string; answer: string }[]
 ): Promise<JobData> {
   const job = loadJob(id);
-  if (!job) throw new AppError('شغل پیدا نشد', 404);
+  if (!job) throw new AppError('کار موردنظر پیدا نشد.', 404);
   const parsedAnswers = answers.map((a) => ClarificationAnswerSchema.parse(a));
   const updated: JobData = {
     ...job,
@@ -94,8 +121,8 @@ function queueJob(id: string, isRetry = false) {
       result.progress = 1;
       persistJob(result);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'خطای نامشخص';
-      logger.error({ err }, 'Job failed');
+      const message = err instanceof AppError ? err.message : 'خطا در اجرای تحلیل.';
+      logger.error({ err, job_id: id }, 'Job failed');
       job = {
         ...job,
         status: JobStatusSchema.enum.failed,

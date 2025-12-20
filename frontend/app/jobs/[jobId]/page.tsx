@@ -26,10 +26,10 @@ function mapModules(coverage?: CoverageEntry[]) {
     status: c.status,
     detail:
       c.status === 'active'
-        ? 'در حال اجرا'
+        ? 'این بخش در حال اجرا است.'
         : c.status === 'partial'
-          ? 'پوشش جزئی به‌دلیل کمبود داده'
-          : 'غیرفعال به‌دلیل کمبود داده',
+          ? 'اطلاعات ناقص است؛ برای تکمیل پاسخ دهید.'
+          : 'این بخش غیرفعال است؛ اطلاعات کافی وجود ندارد.',
     done: false
   }));
 }
@@ -58,7 +58,7 @@ export default function JobPage() {
         setPollInterval((prev) => Math.min(prev + 800, 5000));
       }
     } catch (err) {
-      setError('دریافت وضعیت تحلیل ممکن نشد.');
+      setError('دریافت وضعیت تحلیل با خطا روبه‌رو شد.');
       setView('error');
     }
   }, [jobId]);
@@ -79,23 +79,25 @@ export default function JobPage() {
 
   const statusLabel =
     job?.status === 'failed'
-      ? 'تحلیل متوقف شد. ورودی یا اتصال را بازبینی کنید.'
+      ? 'تحلیل با خطا متوقف شد. دوباره تلاش کنید.'
       : job?.status === 'succeeded'
-        ? 'تحلیل کامل است. نتایج را مشاهده کنید.'
+        ? 'تحلیل کامل شد. می‌توانید نتایج را ببینید.'
         : 'تحلیل در حال اجرا است.';
 
   return (
     <AppShell title="وضعیت تحلیل" subtitle="">
       {view === 'error' ? (
         <section className="card">
-          <h2 className="headline" style={{ fontSize: 18, color: '#ff9b9b' }}>خطا در وضعیت تحلیل</h2>
+          <h2 className="headline" style={{ fontSize: 18, color: '#ff9b9b' }}>
+            خطا در دریافت وضعیت تحلیل
+          </h2>
           <p className="subhead">{error}</p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="button button-primary" onClick={() => fetchAndSet()}>
-              تلاش مجدد
+              تلاش دوباره
             </button>
             <button className="button button-secondary" onClick={() => router.push('/')}>
-              بازگشت
+              بازگشت به ورودی
             </button>
           </div>
         </section>
@@ -112,7 +114,9 @@ export default function JobPage() {
               lastUpdate={lastUpdated}
               demo={job.status !== 'succeeded'}
             />
-            <p className="subhead" style={{ marginTop: 8 }}>{statusLabel}</p>
+            <p className="subhead" style={{ marginTop: 8 }}>
+              {statusLabel}
+            </p>
             {job.status === 'succeeded' ? (
               <div style={{ marginTop: 10 }}>
                 <button
@@ -127,12 +131,16 @@ export default function JobPage() {
           </section>
 
           <section className="card">
-            <h2 className="headline" style={{ fontSize: 20 }}>🧭 مسیر تحلیل</h2>
+            <h2 className="headline" style={{ fontSize: 20 }}>
+              مراحل تحلیل
+            </h2>
             <StageProgress current={stage} />
           </section>
 
           <section className="card">
-            <h2 className="headline" style={{ fontSize: 20 }}>📌 پیشرفت ماژول‌ها</h2>
+            <h2 className="headline" style={{ fontSize: 20 }}>
+              ماژول‌های فعال
+            </h2>
             <ModuleProgress modules={modules} />
           </section>
 
@@ -142,8 +150,12 @@ export default function JobPage() {
 
           {job.status === 'failed' ? (
             <section className="card">
-              <h3 className="headline" style={{ fontSize: 18 }}>بازآغازی تحلیل</h3>
-              <p className="subhead">پس از رفع مشکل ورودی یا شبکه، دوباره تلاش کنید.</p>
+              <h3 className="headline" style={{ fontSize: 18 }}>
+                تحلیل به نتیجه نرسید
+              </h3>
+              <p className="subhead">
+                اگر خطا موقتی است، دوباره تلاش کنید یا داده ورودی را بررسی کنید.
+              </p>
               <button className="button button-primary" onClick={() => fetchAndSet()}>
                 تلاش دوباره
               </button>

@@ -29,19 +29,19 @@ export function InputUploadForm() {
     e.preventDefault();
     if (!text.trim() && !fileName) {
       setStatus('error');
-      setMessage('لطفاً متن یا فایل معتبر وارد کنید.');
+      setMessage('لطفا متن یا فایل را وارد کنید.');
       return;
     }
     setStatus('submitting');
-    setMessage('در حال آماده‌سازی و ارسال...');
+    setMessage('در حال ارسال و آغاز تحلیل...');
     try {
       const jobId = await createJob({ text, file: fileObj ?? undefined });
       setStatus('success');
-      setMessage('درخواست دریافت شد؛ انتقال به وضعیت تحلیل...');
+      setMessage('ارسال شد. در حال انتقال به وضعیت تحلیل...');
       router.push(`/jobs/${jobId}`);
     } catch (err) {
       setStatus('error');
-      setMessage('ارسال با خطا مواجه شد. دوباره تلاش کنید.');
+      setMessage('ارسال ناموفق بود. دوباره تلاش کنید.');
     }
   };
 
@@ -52,11 +52,13 @@ export function InputUploadForm() {
         <textarea
           className="input-field"
           style={{ minHeight: 160, resize: 'vertical' }}
-          placeholder="متن سند یا گزارش تحلیلی"
+          placeholder="متن خود را اینجا وارد کنید"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <p className="helper-text">متن فارسی/RTL؛ پاکسازی و تقسیم به صورت خودکار انجام می‌شود.</p>
+        <p className="helper-text">
+          ورودی فارسی و راست به چپ پشتیبانی می‌شود. می‌توانید متن یا فایل را ارسال کنید.
+        </p>
       </div>
 
       <div>
@@ -74,8 +76,10 @@ export function InputUploadForm() {
           }}
         >
           <div>
-            <div style={{ fontWeight: 600 }}>{fileName ?? 'هیچ فایلی انتخاب نشده است'}</div>
-            <div className="helper-text">PDF / DOCX / TXT تا ۵ مگابایت</div>
+            <div style={{ fontWeight: 600 }}>
+              {fileName ?? 'هیچ فایلی انتخاب نشده است'}
+            </div>
+            <div className="helper-text">پی‌دی‌اف / داکس / متن تا پنج مگابایت</div>
           </div>
           <label className="button button-secondary" style={{ cursor: 'pointer' }}>
             انتخاب فایل
@@ -103,7 +107,7 @@ export function InputUploadForm() {
             setMessage('');
           }}
         >
-          پاکسازی
+          پاک کردن
         </button>
         {message && (
           <span

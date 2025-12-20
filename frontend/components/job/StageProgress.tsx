@@ -3,9 +3,21 @@ import React from 'react';
 type PipelineStage = 'triage' | 'evidence' | 'synthesis';
 
 const stages: { key: PipelineStage; label: string; desc: string }[] = [
-  { key: 'triage', label: 'شناخت و پوشش', desc: 'طبقه‌بندی سند و تعیین ماژول‌ها' },
-  { key: 'evidence', label: 'استخراج شواهد', desc: 'قطعه‌بندی و جمع‌آوری ارجاعات' },
-  { key: 'synthesis', label: 'ترکیب و سناریو', desc: 'تحلیل مشتق و سناریوسازی' }
+  {
+    key: 'triage',
+    label: 'پایش اولیه و ارزیابی',
+    desc: 'تعیین دامنه و امکان‌سنجی برای آغاز تحلیل'
+  },
+  {
+    key: 'evidence',
+    label: 'استخراج شواهد',
+    desc: 'گردآوری شواهد و نشانه‌ها از متن ورودی'
+  },
+  {
+    key: 'synthesis',
+    label: 'ترکیب و جمع‌بندی',
+    desc: 'ساخت گزارش نهایی و یکپارچه‌سازی خروجی‌ها'
+  }
 ];
 
 export function StageProgress({ current }: { current: PipelineStage }) {

@@ -4,7 +4,7 @@ import { z } from 'zod';
 config();
 
 const EnvSchema = z.object({
-  PORT: z.coerce.number().default(3001),
+  PORT: z.coerce.number().default(3002),
   FRONTEND_PORT: z.coerce.number().default(3000),
   DATABASE_FILE: z.string().default('./data/futurelenz.db'),
   LLM_PROVIDER: z.string().default('openai'),

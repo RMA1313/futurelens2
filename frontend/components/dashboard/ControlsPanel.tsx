@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatNumber } from '../../lib/format';
 
 type Props = {
   minConfidence: number;
@@ -23,12 +24,14 @@ export function ControlsPanel({
 }: Props) {
   return (
     <div className="card">
-      <div className="headline" style={{ fontSize: 18 }}>کنترل‌های تحلیلی</div>
+      <div className="headline" style={{ fontSize: 18 }}>
+        کنترل‌های تحلیل
+      </div>
       <div className="form-grid">
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <label style={{ fontWeight: 700 }}>آستانه اطمینان</label>
-            <span className="pill">{minConfidence.toFixed(2)}</span>
+            <span className="pill">{formatNumber(minConfidence)}</span>
           </div>
           <input
             type="range"
@@ -41,7 +44,7 @@ export function ControlsPanel({
           />
         </div>
         <div>
-          <div style={{ fontWeight: 700, marginBottom: 6 }}>نوع برچسب</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>برچسب‌ها</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {['fact', 'inference', 'assumption'].map((label) => (
               <button

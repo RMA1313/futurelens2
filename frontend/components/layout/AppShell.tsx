@@ -22,18 +22,24 @@ export function AppShell({ title, subtitle, children }: ShellProps) {
             aria-hidden
           />
           <div>
-            <div style={{ fontWeight: 800, letterSpacing: '-0.2px' }}>فیچرلنز</div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>اتاق وضعیت آینده‌نگاری</div>
+            <div style={{ fontWeight: 800, letterSpacing: '-0.2px' }}>فیوچرلنز</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+              پلتفرم تحلیل آینده پژوهی مبتنی بر شواهد
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="badge badge-accent">حالت پایدار</span>
-          <span className="badge badge-muted">رابط فارسی | راست‌به‌چپ</span>
+          <span className="badge badge-accent">داشبورد تحلیلی</span>
+          <span className="badge badge-muted">کاملا فارسی و راست به چپ</span>
         </div>
       </header>
       <main className="page-container">
         {title ? <h1 className="headline">{title}</h1> : null}
-        {subtitle ? <p className="subhead" style={{ marginBottom: 16 }}>{subtitle}</p> : null}
+        {subtitle ? (
+          <p className="subhead" style={{ marginBottom: 16 }}>
+            {subtitle}
+          </p>
+        ) : null}
         <div className="section-grid">{children}</div>
       </main>
     </div>

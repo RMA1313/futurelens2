@@ -39,7 +39,7 @@ export function ClarificationPanel({ jobId, questions, onSubmitted }: Props) {
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>💬 سوالات تکمیلی</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>سوالات روشن‌سازی</div>
         </div>
         <span className="badge badge-warning">نیاز به پاسخ</span>
       </div>
@@ -50,7 +50,7 @@ export function ClarificationPanel({ jobId, questions, onSubmitted }: Props) {
             <textarea
               className="input-field"
               style={{ minHeight: 80 }}
-              placeholder="پاسخ تحلیلی (فارسی)"
+              placeholder="پاسخ خود را بنویسید"
               value={answers[q.id] ?? ''}
               onChange={(e) => setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))}
             />
@@ -60,10 +60,10 @@ export function ClarificationPanel({ jobId, questions, onSubmitted }: Props) {
           <button type="submit" className="button button-primary" disabled={status === 'sending'}>
             {status === 'sending' ? 'در حال ارسال...' : 'ارسال و اجرای مجدد'}
           </button>
-          {status === 'sent' ? <span className="pill">ارسال شد؛ اجرای مجدد</span> : null}
+          {status === 'sent' ? <span className="pill">ارسال شد؛ تحلیل در حال اجرای مجدد است</span> : null}
           {status === 'error' ? (
             <span className="pill" style={{ color: '#ff9b9b', borderColor: 'rgba(255,123,123,0.5)' }}>
-              خطا در ارسال. دوباره تلاش کنید.
+              ارسال ناموفق بود. دوباره تلاش کنید.
             </span>
           ) : null}
         </div>

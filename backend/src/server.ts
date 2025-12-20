@@ -16,7 +16,7 @@ export async function buildServer() {
     logger: false,
     loggerInstance: logger,
     genReqId: () => nanoid(12),
-    bodyLimit: 10 * 1024 * 1024
+    bodyLimit: 50 * 1024 * 1024
   });
 
   await fastify.register(cors, { origin: true });
@@ -24,7 +24,7 @@ export async function buildServer() {
     max: env.RATE_LIMIT_MAX,
     timeWindow: env.RATE_LIMIT_WINDOW_MS
   });
-  await fastify.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 } });
+  await fastify.register(multipart, { limits: { fileSize: 25 * 1024 * 1024 } });
 
   await fastify.register(healthRoutes);
   await fastify.register(analyzeRoutes);
@@ -33,9 +33,12 @@ export async function buildServer() {
   await fastify.register(clarificationRoutes);
 
   fastify.setErrorHandler((error, request, reply) => {
-    request.log.error({ error }, 'Unhandled error');
+    request.log.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Unhandled error');
     if (!reply.sent) {
-      reply.status(500).send({ error: 'خطای غیرمنتظره در سرور رخ داد' });
+      reply.status(500).send({
+        code: 'INTERNAL_ERROR',
+        error: 'خطای داخلی سرور.'
+      });
     }
   });
 
@@ -46,10 +49,10 @@ async function start() {
   const server = await buildServer();
   server.listen({ port: env.PORT, host: '0.0.0.0' }, (err, address) => {
     if (err) {
-      logger.error(err, 'خطا در راه‌اندازی سرور');
+      logger.error({ err, stack: err.stack }, 'خطا در راه‌اندازی سرور');
       process.exit(1);
     }
-    logger.info({ address }, 'سرویس FutureLenz آماده است');
+    logger.info({ address }, 'سرور FutureLenz آماده است');
   });
 }
 

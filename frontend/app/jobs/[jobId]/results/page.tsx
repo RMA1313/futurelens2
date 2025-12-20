@@ -13,6 +13,8 @@ import { AnalysisPanel } from '../../../../components/dashboard/AnalysisPanel';
 import { ScenariosPanel } from '../../../../components/dashboard/ScenariosPanel';
 import { EvidenceDrawer } from '../../../../components/evidence/EvidenceDrawer';
 import { ExportPanel } from '../../../../components/dashboard/ExportPanel';
+import { ClarificationPanel } from '../../../../components/job/ClarificationPanel';
+import { formatDateTime, formatId } from '../../../../lib/format';
 
 type ViewState = 'loading' | 'ready' | 'not-ready' | 'error';
 
@@ -36,6 +38,25 @@ export default function ResultsPage() {
   const [compareMode, setCompareMode] = React.useState(false);
   const [compareIds, setCompareIds] = React.useState<string[]>([]);
   const [evidenceOpenId, setEvidenceOpenId] = React.useState<string | null>(null);
+  const [highlightPanelId, setHighlightPanelId] = React.useState<string | null>(null);
+  const [clarificationState, setClarificationState] = React.useState<'idle' | 'updating' | 'updated' | 'timeout' | 'error'>('idle');
+  const [diffSets, setDiffSets] = React.useState<{
+    trends: Set<string>;
+    weakSignals: Set<string>;
+    uncertainties: Set<string>;
+    scenarios: Set<string>;
+    profile: boolean;
+    coverage: boolean;
+  }>({
+    trends: new Set(),
+    weakSignals: new Set(),
+    uncertainties: new Set(),
+    scenarios: new Set(),
+    profile: false,
+    coverage: false
+  });
+
+  const reportRef = React.useRef<Report | null>(null);
 
   const load = React.useCallback(async () => {
     try {
@@ -47,11 +68,21 @@ export default function ResultsPage() {
       }
       const rep = await fetchReport(jobId);
       setReport(rep);
+      reportRef.current = rep;
+      setDiffSets({
+        trends: new Set(),
+        weakSignals: new Set(),
+        uncertainties: new Set(),
+        scenarios: new Set(),
+        profile: false,
+        coverage: false
+      });
+      setClarificationState('idle');
       setLastUpdated(new Date().toLocaleString('fa-IR'));
       setView('ready');
       setError(null);
     } catch (err) {
-      setError('خطا در دریافت گزارش');
+      setError('خطا در دریافت گزارش.');
       setView('error');
     }
   }, [jobId]);
@@ -61,6 +92,7 @@ export default function ResultsPage() {
   }, [load]);
 
   const evidence: EvidenceItem[] = report?.dashboard?.evidence ?? [];
+  const clarifications = report?.dashboard?.clarification_questions ?? [];
 
   const toggleLabel = (label: string) => {
     setLabels((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -83,16 +115,67 @@ export default function ResultsPage() {
     onToggleCompare: toggleCompareId
   };
 
+  const handleCoverageSelect = (moduleName: string) => {
+    const normalized = moduleName.toLowerCase();
+    const map: { id: string; match: (name: string) => boolean }[] = [
+      { id: 'panel-document', match: (name) => name.includes('document') || name.includes('پروفایل') },
+      { id: 'panel-coverage', match: (name) => name.includes('coverage') || name.includes('پوشش') },
+      { id: 'panel-trends', match: (name) => name.includes('trend') || name.includes('روند') },
+      { id: 'panel-weak-signals', match: (name) => name.includes('weak') || name.includes('نشانه') },
+      { id: 'panel-uncertainties', match: (name) => name.includes('uncertainty') || name.includes('عدم قطعیت') },
+      { id: 'panel-scenarios', match: (name) => name.includes('scenario') || name.includes('سناریو') },
+      { id: 'panel-evidence', match: (name) => name.includes('evidence') || name.includes('شاهد') }
+    ];
+    const target = map.find((entry) => entry.match(normalized))?.id;
+    const targetId = target ?? 'panel-coverage';
+    const el = document.getElementById(targetId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setHighlightPanelId(targetId);
+      window.setTimeout(() => setHighlightPanelId(null), 1500);
+    }
+  };
+
+  const startClarificationPolling = async () => {
+    const baseline = reportRef.current;
+    if (!baseline) return;
+    setClarificationState('updating');
+    const maxAttempts = 8;
+    let delay = 1500;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay = Math.min(delay + 1200, 5000);
+      try {
+        const nextReport = await fetchReport(jobId);
+        const isChanged = !reportsEqual(baseline, nextReport);
+        if (isChanged) {
+          setReport(nextReport);
+          reportRef.current = nextReport;
+          setLastUpdated(new Date().toLocaleString('fa-IR'));
+          setDiffSets(buildDiff(baseline, nextReport));
+          setClarificationState('updated');
+          return;
+        }
+      } catch (err) {
+        setClarificationState('error');
+        return;
+      }
+    }
+    setClarificationState('timeout');
+  };
+
   const compareSection =
     compareMode && compareIds.length ? (
       <div className="card">
-        <div className="headline" style={{ fontSize: 18 }}>نمای مقایسه</div>
-        <p className="subhead">مقایسه دو مورد انتخاب شده از پانل‌های بالا.</p>
+        <div className="headline" style={{ fontSize: 18 }}>
+          مقایسه انتخاب‌ها
+        </div>
+        <p className="subhead">برای مقایسه، حداکثر دو مورد را انتخاب کنید.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
           {compareIds.map((id) => (
             <div key={id} className="card" style={{ background: 'var(--color-surface-2)' }}>
-              <div style={{ fontWeight: 800 }}>مورد {id}</div>
-              <div className="subhead">اطلاعات تفصیلی در پانل اصلی</div>
+              <div style={{ fontWeight: 800 }}>شناسه مورد: {formatId(id)}</div>
+              <div className="subhead">جزئیات مقایسه در این بخش نمایش داده می‌شود.</div>
             </div>
           ))}
         </div>
@@ -102,23 +185,25 @@ export default function ResultsPage() {
   return (
     <AppShell
       title="داشبورد نتایج"
-      subtitle="فضای وضعیت‌روم: شناسنامه سند → پوشش → شواهد → تحلیل مشتق → سناریو → خروجی."
+      subtitle="نمای کلی نتایج: پروفایل سند، پوشش، شواهد، روندها، عدم قطعیت و سناریوها."
     >
       <section className="card" style={{ borderColor: 'rgba(106,216,255,0.25)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
-            <h2 className="headline" style={{ fontSize: 22 }}>وضعیت گزارش</h2>
+            <h2 className="headline" style={{ fontSize: 22 }}>
+              جزئیات تحلیل
+            </h2>
             <p className="subhead">
-              jobId: {jobId} | آخرین به‌روزرسانی: {lastUpdated || 'در حال بارگیری'}
+              شناسه تحلیل: {formatId(jobId)} | آخرین به‌روزرسانی: {formatDateTime(lastUpdated || 'در حال بارگذاری')}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <HealthStatus />
             <button className="button button-secondary" type="button" onClick={() => router.push(`/jobs/${jobId}`)}>
-              بازگشت به وضعیت
+              بازگشت به وضعیت تحلیل
             </button>
             <button className="button button-secondary" type="button" onClick={load}>
-              تازه‌سازی
+              به‌روزرسانی
             </button>
           </div>
         </div>
@@ -126,8 +211,10 @@ export default function ResultsPage() {
 
       {view === 'loading' ? (
         <section className="card">
-          <div className="headline" style={{ fontSize: 18 }}>در حال بارگذاری نتایج...</div>
-          <div className="subhead">لطفاً کمی صبر کنید.</div>
+          <div className="headline" style={{ fontSize: 18 }}>
+            در حال بارگذاری نتایج...
+          </div>
+          <div className="subhead">لطفا کمی صبر کنید.</div>
           <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
             <div className="skeleton" style={{ height: 14, width: '60%' }} />
             <div className="skeleton" style={{ height: 14, width: '40%' }} />
@@ -138,20 +225,22 @@ export default function ResultsPage() {
 
       {view === 'not-ready' ? (
         <section className="card">
-          <div className="headline" style={{ fontSize: 18 }}>نتایج هنوز آماده نیست</div>
-          <div className="subhead">برای مشاهده وضعیت اجرا به صفحه شغل بازگردید.</div>
+          <div className="headline" style={{ fontSize: 18 }}>نتایج هنوز آماده نیست.</div>
+          <div className="subhead">برای مشاهده نتایج، منتظر پایان تحلیل بمانید.</div>
           <button className="button button-primary" onClick={() => router.push(`/jobs/${jobId}`)}>
-            بازگشت به وضعیت
+            بازگشت به وضعیت تحلیل
           </button>
         </section>
       ) : null}
 
       {view === 'error' ? (
         <section className="card">
-          <div className="headline" style={{ fontSize: 18, color: '#ff9b9b' }}>خطا در دریافت گزارش</div>
+          <div className="headline" style={{ fontSize: 18, color: '#ff9b9b' }}>
+            خطا در دریافت گزارش
+          </div>
           <div className="subhead">{error}</div>
           <button className="button button-primary" onClick={load}>
-            تلاش مجدد
+            تلاش دوباره
           </button>
         </section>
       ) : null}
@@ -166,16 +255,27 @@ export default function ResultsPage() {
           }}
         >
           <div className="section-grid">
-            <DocumentProfileCard profile={report.dashboard?.document_profile} />
-            <CoveragePanel coverage={report.dashboard?.coverage} />
+            <DocumentProfileCard
+              profile={report.dashboard?.document_profile}
+              highlight={highlightPanelId === 'panel-document' || diffSets.profile}
+              panelId="panel-document"
+            />
+            <CoveragePanel
+              coverage={report.dashboard?.coverage}
+              onSelect={handleCoverageSelect}
+              highlight={highlightPanelId === 'panel-coverage' || diffSets.coverage}
+            />
 
             <AnalysisPanel
               title="روندها"
-              items={report.dashboard?.trends?.map((t) => ({
+              items={report.dashboard?.trends?.map((t, index) => ({
                 id: t.id,
+                key: t.id ?? `${hashTrend(t)}-${index}`,
                 title: t.label,
                 rationale: t.rationale,
                 category: t.category,
+                direction: t.direction,
+                strength: t.strength,
                 label_type: t.label_type as any,
                 confidence: t.confidence,
                 evidence_ids: t.evidence_ids
@@ -183,12 +283,17 @@ export default function ResultsPage() {
               evidence={evidence}
               onEvidenceClick={setEvidenceOpenId}
               filter={filterState}
+              changedIds={diffSets.trends}
+              panelId="panel-trends"
+              highlight={highlightPanelId === 'panel-trends'}
+              showTrendMeta
             />
 
             <AnalysisPanel
               title="نشانه‌های ضعیف"
-              items={report.dashboard?.weak_signals?.map((w) => ({
+              items={report.dashboard?.weak_signals?.map((w, index) => ({
                 id: w.id,
+                key: w.id ?? `${hashWeakSignal(w)}-${index}`,
                 title: w.signal,
                 rationale: w.rationale,
                 evolution: w.evolution,
@@ -199,12 +304,16 @@ export default function ResultsPage() {
               evidence={evidence}
               onEvidenceClick={setEvidenceOpenId}
               filter={filterState}
+              changedIds={diffSets.weakSignals}
+              panelId="panel-weak-signals"
+              highlight={highlightPanelId === 'panel-weak-signals'}
             />
 
             <AnalysisPanel
-              title="عدم قطعیت‌های بحرانی"
-              items={report.dashboard?.critical_uncertainties?.map((u) => ({
+              title="عدم قطعیت‌های کلیدی"
+              items={report.dashboard?.critical_uncertainties?.map((u, index) => ({
                 id: u.id,
+                key: u.id ?? `${hashUncertainty(u)}-${index}`,
                 title: u.driver,
                 rationale: u.uncertainty_reason,
                 impact: u.impact,
@@ -215,13 +324,22 @@ export default function ResultsPage() {
               evidence={evidence}
               onEvidenceClick={setEvidenceOpenId}
               filter={filterState}
+              changedIds={diffSets.uncertainties}
+              panelId="panel-uncertainties"
+              highlight={highlightPanelId === 'panel-uncertainties'}
             />
 
             <ScenariosPanel
-              scenarios={report.dashboard?.scenarios}
+              scenarios={report.dashboard?.scenarios?.map((s, index) => ({
+                ...s,
+                key: s.id ?? `${hashScenario(s)}-${index}`
+              }))}
               evidence={evidence}
               onEvidenceClick={setEvidenceOpenId}
               filter={filterState}
+              changedIds={diffSets.scenarios}
+              panelId="panel-scenarios"
+              highlight={highlightPanelId === 'panel-scenarios'}
             />
 
             {compareSection}
@@ -239,10 +357,46 @@ export default function ResultsPage() {
               onToggleCompare={() => setCompareMode((p) => !p)}
             />
 
-            <div className="card">
-              <div className="headline" style={{ fontSize: 18 }}>اکسپلورر شواهد</div>
-              <div className="subhead">برای مشاهده، روی برچسب‌های شاهد در کارت‌ها کلیک کنید.</div>
+            <div className={`card ${highlightPanelId === 'panel-evidence' ? 'panel-highlight' : ''}`} id="panel-evidence">
+              <div className="headline" style={{ fontSize: 18 }}>
+                مرور شواهد
+              </div>
+              <div className="subhead">
+                برای دیدن منبع هر ادعا، روی برچسب شاهد کلیک کنید.
+              </div>
             </div>
+
+            {clarifications.length ? (
+              <div className="card">
+                <div className="headline" style={{ fontSize: 18 }}>
+                  روشن‌سازی و اجرای مجدد
+                </div>
+                <div className="subhead" style={{ marginBottom: 10 }}>
+                  پاسخ به سوالات روشن‌سازی باعث بهبود کیفیت تحلیل می‌شود.
+                </div>
+                <ClarificationPanel jobId={jobId} questions={clarifications} onSubmitted={startClarificationPolling} />
+                {clarificationState === 'updating' ? (
+                  <div className="pill" style={{ marginTop: 10 }}>
+                    در حال دریافت نسخه به‌روزشده گزارش...
+                  </div>
+                ) : null}
+                {clarificationState === 'updated' ? (
+                  <div className="pill" style={{ marginTop: 10 }}>
+                    گزارش به‌روزرسانی شد و تغییرات برجسته شدند.
+                  </div>
+                ) : null}
+                {clarificationState === 'timeout' ? (
+                  <div className="pill" style={{ marginTop: 10 }}>
+                    به‌روزرسانی در زمان مقرر دریافت نشد. کمی بعد دوباره تلاش کنید.
+                  </div>
+                ) : null}
+                {clarificationState === 'error' ? (
+                  <div className="pill" style={{ marginTop: 10, color: '#ff9b9b' }}>
+                    خطا در دریافت نسخه جدید گزارش.
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <ExportPanel report={report} jobId={jobId} />
           </div>
@@ -254,7 +408,136 @@ export default function ResultsPage() {
         openId={evidenceOpenId}
         onClose={() => setEvidenceOpenId(null)}
         onSelect={(id) => setEvidenceOpenId(id)}
+        extractionQuality={report?.dashboard?.extraction_quality}
       />
     </AppShell>
   );
+}
+
+function reportsEqual(prev?: Report | null, next?: Report | null) {
+  if (!prev || !next) return false;
+  return buildSignature(prev) === buildSignature(next);
+}
+
+function buildSignature(report: Report) {
+  const profile = report.dashboard?.document_profile
+    ? [
+        report.dashboard.document_profile.document_type,
+        report.dashboard.document_profile.domain,
+        report.dashboard.document_profile.horizon,
+        report.dashboard.document_profile.analytical_level,
+        ...(report.dashboard.document_profile.limitations ?? [])
+      ].join('|')
+    : '';
+  const coverage = (report.dashboard?.coverage ?? [])
+    .map((c) => `${c.module}:${c.status}:${(c.missing_information ?? []).join(',')}`)
+    .join('|');
+  const trends = (report.dashboard?.trends ?? []).map(hashTrend).join('|');
+  const weakSignals = (report.dashboard?.weak_signals ?? []).map(hashWeakSignal).join('|');
+  const uncertainties = (report.dashboard?.critical_uncertainties ?? []).map(hashUncertainty).join('|');
+  const scenarios = (report.dashboard?.scenarios ?? []).map(hashScenario).join('|');
+  const clarifications = (report.dashboard?.clarification_questions ?? []).map((q) => `${q.id}:${q.question}`).join('|');
+  return [profile, coverage, trends, weakSignals, uncertainties, scenarios, clarifications].join('||');
+}
+
+function buildDiff(prev: Report, next: Report) {
+  const prevTrendMap = buildItemMap(prev.dashboard?.trends ?? [], hashTrend);
+  const nextTrendMap = buildItemMap(next.dashboard?.trends ?? [], hashTrend);
+  const prevWeakMap = buildItemMap(prev.dashboard?.weak_signals ?? [], hashWeakSignal);
+  const nextWeakMap = buildItemMap(next.dashboard?.weak_signals ?? [], hashWeakSignal);
+  const prevUncertaintyMap = buildItemMap(prev.dashboard?.critical_uncertainties ?? [], hashUncertainty);
+  const nextUncertaintyMap = buildItemMap(next.dashboard?.critical_uncertainties ?? [], hashUncertainty);
+  const prevScenarioMap = buildItemMap(prev.dashboard?.scenarios ?? [], hashScenario);
+  const nextScenarioMap = buildItemMap(next.dashboard?.scenarios ?? [], hashScenario);
+
+  return {
+    trends: findChangedIds(prevTrendMap, nextTrendMap),
+    weakSignals: findChangedIds(prevWeakMap, nextWeakMap),
+    uncertainties: findChangedIds(prevUncertaintyMap, nextUncertaintyMap),
+    scenarios: findChangedIds(prevScenarioMap, nextScenarioMap),
+    profile: hashProfile(prev.dashboard?.document_profile) !== hashProfile(next.dashboard?.document_profile),
+    coverage: hashCoverage(prev.dashboard?.coverage) !== hashCoverage(next.dashboard?.coverage)
+  };
+}
+
+function buildItemMap<T extends { id?: string }>(items: T[], hashFn: (item: T) => string) {
+  const map = new Map<string, string>();
+  items.forEach((item, index) => {
+    const key = item.id || `${hashFn(item)}-${index}`;
+    map.set(key, hashFn(item));
+  });
+  return map;
+}
+
+function findChangedIds(prev: Map<string, string>, next: Map<string, string>) {
+  const changed = new Set<string>();
+  next.forEach((hash, key) => {
+    const prevHash = prev.get(key);
+    if (!prevHash || prevHash !== hash) changed.add(key);
+  });
+  return changed;
+}
+
+function hashTrend(item: any) {
+  return [
+    item.id,
+    item.label,
+    item.category,
+    item.direction,
+    item.strength,
+    item.confidence,
+    item.rationale,
+    (item.evidence_ids ?? []).join(',')
+  ].join('|');
+}
+
+function hashWeakSignal(item: any) {
+  return [
+    item.id,
+    item.signal,
+    item.rationale,
+    item.evolution,
+    item.confidence,
+    (item.evidence_ids ?? []).join(',')
+  ].join('|');
+}
+
+function hashUncertainty(item: any) {
+  return [
+    item.id,
+    item.driver,
+    item.impact,
+    item.uncertainty_reason,
+    item.confidence,
+    (item.evidence_ids ?? []).join(',')
+  ].join('|');
+}
+
+function hashScenario(item: any) {
+  return [
+    item.id,
+    item.title,
+    item.summary,
+    (item.implications ?? []).join(','),
+    (item.indicators ?? []).join(','),
+    item.confidence,
+    (item.evidence_ids ?? []).join(',')
+  ].join('|');
+}
+
+function hashProfile(profile?: Report['dashboard']['document_profile']) {
+  if (!profile) return '';
+  return [
+    profile.document_type,
+    profile.domain,
+    profile.horizon,
+    profile.analytical_level,
+    (profile.limitations ?? []).join(',')
+  ].join('|');
+}
+
+function hashCoverage(coverage?: Report['dashboard']['coverage']) {
+  return (coverage ?? [])
+    .map((c) => `${c.module}:${c.status}:${(c.missing_information ?? []).join(',')}`)
+    .join('|');
 }

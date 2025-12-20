@@ -7,17 +7,17 @@ import {
   ReportSchema
 } from './schemas';
 
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002';
 
 async function handleResponse<T>(res: Response, schema: z.ZodSchema<T>): Promise<T> {
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || 'خطا در ارتباط با سرویس');
+    throw new Error(text || 'خطا در دریافت پاسخ از سرور.');
   }
   const data = await res.json();
   const parsed = schema.safeParse(data);
   if (!parsed.success) {
-    throw new Error('پاسخ نامعتبر از سرویس');
+    throw new Error('ساختار پاسخ سرور نامعتبر است.');
   }
   return parsed.data;
 }
@@ -68,7 +68,7 @@ export async function submitClarifications(jobId: string, answers: { questionId:
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || 'خطا در ارسال پاسخ‌ها');
+    throw new Error(text || 'خطا در ارسال پاسخ‌های تکمیلی.');
   }
   return true;
 }
@@ -77,7 +77,7 @@ export async function fetchReport(jobId: string) {
   const res = await fetch(`${baseURL}/api/jobs/${jobId}/report`, { cache: 'no-store' });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || 'خطا در دریافت گزارش');
+    throw new Error(text || 'خطا در دریافت گزارش.');
   }
   const data = await res.json();
   const parsed = ReportSchema.safeParse(data);
@@ -86,5 +86,5 @@ export async function fetchReport(jobId: string) {
   if (partial.success) {
     return partial.data as any;
   }
-  throw new Error('گزارش دریافتی ناقص یا نامعتبر است');
+  throw new Error('ساختار گزارش سرور نامعتبر است.');
 }

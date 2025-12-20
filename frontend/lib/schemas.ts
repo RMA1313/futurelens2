@@ -64,7 +64,10 @@ export const EvidenceItemSchema = z.object({
   kind: z.string(),
   chunk_id: z.string(),
   snippet: z.string(),
-  content: z.string().optional()
+  content: z.string().optional(),
+  page: z.number().optional(),
+  label_type: z.enum(['fact', 'inference', 'assumption']).optional(),
+  confidence: z.number().optional()
 });
 export type EvidenceItem = z.infer<typeof EvidenceItemSchema>;
 
@@ -134,7 +137,13 @@ export const ReportSchema = z.object({
     weak_signals: z.array(WeakSignalSchema).optional(),
     critical_uncertainties: z.array(UncertaintySchema).optional(),
     scenarios: z.array(ScenarioSchema).optional(),
-    evidence: z.array(EvidenceItemSchema).optional()
+    evidence: z.array(EvidenceItemSchema).optional(),
+    extraction_quality: z
+      .object({
+        status: z.enum(['ok', 'low']),
+        message: z.string().optional()
+      })
+      .optional()
   })
 });
 export type Report = z.infer<typeof ReportSchema>;

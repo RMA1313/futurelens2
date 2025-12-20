@@ -11,7 +11,7 @@ type HealthState = {
 export function HealthStatus() {
   const [health, setHealth] = React.useState<HealthState>({
     status: 'loading',
-    message: 'در حال بررسی وضعیت',
+    message: 'در حال بررسی سلامت سامانه',
     demo: false
   });
 
@@ -24,14 +24,16 @@ export function HealthStatus() {
         const demo = !data.providerConfigured;
         setHealth({
           status: 'healthy',
-          message: demo ? 'حالت دمو (کلید LLM موجود نیست)' : 'اتصال پایدار',
+          message: demo
+            ? 'حالت نمایشی فعال است؛ کلید مدل زبانی تنظیم نشده است.'
+            : 'اتصال پایدار',
           demo
         });
       } catch (_) {
         if (!active) return;
         setHealth({
           status: 'offline',
-          message: 'عدم دسترسی به سرویس؛ ادامه با داده نمایشی',
+          message: 'ارتباط با سرویس برقرار نشد؛ دوباره تلاش کنید.',
           demo: true
         });
       }
@@ -54,11 +56,11 @@ export function HealthStatus() {
         {health.status === 'healthy'
           ? 'سالم'
           : health.status === 'degraded'
-            ? 'نیمه‌فعال'
-            : 'غیرفعال'}
+            ? 'ناپایدار'
+            : 'خارج از دسترس'}
       </span>
       <span className="pill">{health.message}</span>
-      {health.demo ? <span className="pill">حالت دمو</span> : null}
+      {health.demo ? <span className="pill">حالت نمایشی</span> : null}
     </div>
   );
 }

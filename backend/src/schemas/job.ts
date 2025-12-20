@@ -19,7 +19,7 @@ export const AnalyzeRequestSchema = z
     fileBuffer: z.instanceof(Buffer).optional()
   })
   .refine((val) => !!val.text || (!!val.fileName && !!val.fileBuffer), {
-    message: 'متن یا فایل لازم است'
+    message: 'متن یا فایل برای تحلیل ارسال نشده است.'
   });
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
@@ -29,7 +29,16 @@ export const JobDataSchema = z.object({
   progress: z.number().min(0).max(1),
   input: z.object({
     text: z.string().optional(),
-    fileName: z.string().optional()
+    fileName: z.string().optional(),
+    extraction: z
+      .object({
+        extracted_chars: z.number(),
+        extractor_used: z.string(),
+        pages_detected: z.number(),
+        is_scanned_heuristic: z.boolean(),
+        file_name: z.string().optional()
+      })
+      .optional()
   }),
   chunks: z.array(ChunkSchema),
   outputs: PipelineOutputsSchema.default({}),

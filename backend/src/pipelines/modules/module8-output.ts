@@ -19,6 +19,7 @@ export function runModule8OutputComposer(params: {
   uncertainties: CriticalUncertainty[];
   scenarios: Scenario[];
   evidence: EvidenceItem[];
+  extractionQuality?: { status: 'ok' | 'low'; message?: string };
 }): OutputComposer {
   const {
     classifier,
@@ -28,7 +29,8 @@ export function runModule8OutputComposer(params: {
     weakSignals,
     uncertainties,
     scenarios,
-    evidence
+    evidence,
+    extractionQuality
   } = params;
 
   const executive_brief = `این تحلیل بر اساس سند ${classifier.document_type} در حوزه ${classifier.domain} انجام شد. مهم‌ترین روند، «${trends[0]?.label ?? 'شناسایی اولیه روند'}» و نامطمئن‌ترین محرک «${uncertainties[0]?.driver ?? 'محرک در دست بررسی'}» است.`;
@@ -60,7 +62,8 @@ export function runModule8OutputComposer(params: {
       weak_signals: weakSignals,
       critical_uncertainties: uncertainties,
       scenarios: scenarios.length ? scenarios : undefined,
-      evidence
+      evidence,
+      extraction_quality: extractionQuality
     }
   };
 

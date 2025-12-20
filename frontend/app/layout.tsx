@@ -9,8 +9,8 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: 'فیچرلنز | اتاق وضعیت آینده‌نگاری',
-  description: 'داشبورد آینده‌پژوهی فیچرلنز با رابط فارسی و راست‌به‌چپ'
+  title: 'فیوچرلنز | پلتفرم تحلیل آینده پژوهی',
+  description: 'داشبورد تحلیلی آینده پژوهی با تمرکز بر شواهد، شفافیت و پیگیری منبع'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

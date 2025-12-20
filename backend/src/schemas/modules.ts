@@ -33,7 +33,10 @@ export const EvidenceItemSchema = z.object({
   kind: z.enum(['claim', 'actor', 'event', 'metric']),
   chunk_id: z.string(),
   snippet: z.string(),
-  content: z.string()
+  content: z.string(),
+  page: z.number().optional(),
+  label_type: FactLabelSchema.optional(),
+  confidence: z.number().min(0).max(1).optional()
 });
 export type EvidenceItem = z.infer<typeof EvidenceItemSchema>;
 
@@ -105,7 +108,13 @@ export const OutputComposerSchema = z.object({
     weak_signals: z.array(WeakSignalItemSchema),
     critical_uncertainties: z.array(CriticalUncertaintySchema),
     scenarios: z.array(ScenarioSchema).optional(),
-    evidence: z.array(EvidenceItemSchema)
+    evidence: z.array(EvidenceItemSchema),
+    extraction_quality: z
+      .object({
+        status: z.enum(['ok', 'low']),
+        message: z.string().optional()
+      })
+      .optional()
   })
 });
 export type OutputComposer = z.infer<typeof OutputComposerSchema>;

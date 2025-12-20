@@ -15,26 +15,30 @@ const statusBadge: Record<string, string> = {
 
 export function CoveragePanel({
   coverage,
-  onSelect
+  onSelect,
+  highlight
 }: {
   coverage?: CoverageEntry[];
   onSelect?: (module: string) => void;
+  highlight?: boolean;
 }) {
   if (!coverage || !coverage.length) {
     return (
-      <div className="card" id="panel-coverage">
-        <div className="headline" style={{ fontSize: 18 }}>🛡️ پوشش تحلیل</div>
-        <p className="subhead">داده پوشش در دسترس نیست.</p>
+      <div className={`card ${highlight ? 'panel-highlight' : ''}`} id="panel-coverage">
+        <div className="headline" style={{ fontSize: 18 }}>
+          نقشه پوشش ماژول‌ها
+        </div>
+        <p className="subhead">نقشه پوشش هنوز آماده نشده است.</p>
       </div>
     );
   }
 
   return (
-    <div className="card" id="panel-coverage">
+    <div className={`card ${highlight ? 'panel-highlight' : ''}`} id="panel-coverage">
       <div className="headline" style={{ fontSize: 20, display: 'flex', alignItems: 'center', gap: 6 }}>
-        🛡️ پوشش تحلیل
+        نقشه پوشش ماژول‌ها
         <span
-          title="برخی ماژول‌ها به‌دلیل محدودیت داده یا ماهیت سند، به‌صورت جزئی یا غیرفعال اجرا شده‌اند."
+          title="وضعیت هر ماژول بر اساس کفایت داده ورودی تعیین می‌شود. موارد جزئی یا غیرفعال نیازمند اطلاعات تکمیلی هستند."
           style={{ color: 'var(--color-text-muted)', fontSize: 14, cursor: 'help' }}
         >
           ⓘ
@@ -51,7 +55,7 @@ export function CoveragePanel({
 
 function CoverageItem({ entry, onSelect }: { entry: CoverageEntry; onSelect?: (module: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const missing = entry.missing_information?.join('؛ ');
+  const missing = entry.missing_information?.join('، ');
   return (
     <div
       ref={ref}
@@ -63,7 +67,7 @@ function CoverageItem({ entry, onSelect }: { entry: CoverageEntry; onSelect?: (m
         <div>
           <div style={{ fontWeight: 800, fontSize: 15 }}>{entry.module}</div>
           <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>
-            {missing || 'پوشش مناسب'}
+            {missing || 'اطلاعات کافی موجود است.'}
           </div>
         </div>
         <span className={`badge ${statusBadge[entry.status]}`}>{statusLabel[entry.status]}</span>

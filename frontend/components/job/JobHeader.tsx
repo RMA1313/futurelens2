@@ -1,4 +1,6 @@
 import React from 'react';
+import { formatDateTime, formatId, formatPercent } from '../../lib/format';
+
 type Props = {
   jobId: string;
   status: string;
@@ -12,15 +14,19 @@ export function JobHeader({ jobId, status, stage, progress, lastUpdate, demo }: 
   const percent = Math.round(progress * 100);
   const statusLabel =
     status === 'succeeded'
-      ? 'تکمیل'
+      ? 'موفق'
       : status === 'failed'
-        ? 'خطا'
+        ? 'ناموفق'
         : status === 'running'
           ? 'در حال اجرا'
-          : 'در صف';
+          : 'در انتظار';
 
   const stageLabel =
-    stage === 'triage' ? 'شناخت و پوشش' : stage === 'evidence' ? 'استخراج شواهد' : 'ترکیب و سناریو';
+    stage === 'triage'
+      ? 'پایش اولیه و ارزیابی'
+      : stage === 'evidence'
+        ? 'استخراج شواهد'
+        : 'ترکیب و جمع‌بندی';
 
   return (
     <div className="card">
@@ -33,24 +39,27 @@ export function JobHeader({ jobId, status, stage, progress, lastUpdate, demo }: 
         }}
       >
         <div>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>🛰️ وضعیت تحلیل جاری</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>نمای کلی وضعیت تحلیل</div>
           <div className="subhead" style={{ marginTop: 4 }}>
-            شناسه تحلیل و وضعیت زمان‌بندی.
+            پیگیری روند تحلیل و میزان پیشرفت در هر مرحله.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <span className="pill">jobId: {jobId}</span>
+          <span className="pill">شناسه تحلیل: {formatId(jobId)}</span>
           <span className={`badge ${status === 'failed' ? 'badge-warning' : 'badge-accent'}`}>
             {statusLabel}
           </span>
-          <span className="pill">وضعیت مفهومی: {stageLabel}</span>
-          <span className="pill">آخرین به‌روزرسانی: {lastUpdate}</span>
+          <span className="pill">مرحله فعلی: {stageLabel}</span>
+          <span className="pill">آخرین به‌روزرسانی: {formatDateTime(lastUpdate)}</span>
           {demo ? (
-            <span className="badge badge-warning" title="این تحلیل در حالت نمایشی اجرا شده و نتایج صرفاً نمونه هستند.">
-              دمو
+            <span
+              className="badge badge-warning"
+              title="تحلیل در حالت نمایشی است و خروجی‌ها ممکن است کامل نباشند."
+            >
+              حالت نمایشی
             </span>
           ) : (
-            <span className="badge badge-success">واقعی</span>
+            <span className="badge badge-success">اتصال پایدار</span>
           )}
         </div>
       </div>
@@ -64,8 +73,8 @@ export function JobHeader({ jobId, status, stage, progress, lastUpdate, demo }: 
             fontSize: 13
           }}
         >
-          <span>پیشرفت مفهومی</span>
-          <span>{percent}%</span>
+          <span>درصد پیشرفت</span>
+          <span>{formatPercent(percent)}</span>
         </div>
         <div
           style={{
