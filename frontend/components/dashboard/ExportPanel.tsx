@@ -17,9 +17,6 @@ export function ExportPanel({ report, jobId }: { report?: Report; jobId: string 
         دریافت خروجی
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <button className="button button-primary" type="button" onClick={handleDownload} disabled={!report}>
-          دانلود خروجی ساخت‌یافته
-        </button>
         <a
           className="button button-secondary"
           style={{ padding: '12px 16px' }}

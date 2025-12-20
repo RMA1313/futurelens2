@@ -372,7 +372,7 @@ export default function ResultsPage() {
             {clarifications.length ? (
               <div className="card">
                 <div className="headline" style={{ fontSize: 18 }}>
-                  روشن‌سازی و اجرای مجدد
+                  ویرایش و اجرای مجدد
                 </div>
                 <ClarificationPanel jobId={jobId} questions={clarifications} onSubmitted={startClarificationPolling} />
                 {clarificationState === 'updating' ? (

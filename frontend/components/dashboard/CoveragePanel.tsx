@@ -1,17 +1,6 @@
 import React, { useRef } from 'react';
 import { CoverageEntry } from '../../lib/schemas';
-
-const statusLabel: Record<string, string> = {
-  active: 'فعال',
-  partial: 'جزئی',
-  inactive: 'غیرفعال'
-};
-
-const statusBadge: Record<string, string> = {
-  active: 'badge-success',
-  partial: 'badge-warning',
-  inactive: 'badge-muted'
-};
+import { getModuleLabel, getModuleStatusBadge, getModuleStatusLabel } from '../../lib/i18n/labels';
 
 export function CoveragePanel({
   coverage,
@@ -65,12 +54,14 @@ function CoverageItem({ entry, onSelect }: { entry: CoverageEntry; onSelect?: (m
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>{entry.module}</div>
+          <div style={{ fontWeight: 800, fontSize: 15 }}>{getModuleLabel(entry.module)}</div>
           <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>
             {missing || 'اطلاعات کافی موجود است.'}
           </div>
         </div>
-        <span className={`badge ${statusBadge[entry.status]}`}>{statusLabel[entry.status]}</span>
+        <span className={`badge ${getModuleStatusBadge(entry.status)}`}>
+          {getModuleStatusLabel(entry.status)}
+        </span>
       </div>
     </div>
   );

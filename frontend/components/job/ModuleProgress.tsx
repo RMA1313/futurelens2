@@ -1,6 +1,5 @@
 import React from 'react';
-
-type ModuleStatus = 'active' | 'partial' | 'inactive';
+import { getModuleLabel, getModuleStatusBadge, getModuleStatusLabel, ModuleStatus } from '../../lib/i18n/labels';
 
 type ModuleItem = {
   name: string;
@@ -8,12 +7,6 @@ type ModuleItem = {
   status: ModuleStatus;
   detail: string;
   done: boolean;
-};
-
-const statusMap: Record<ModuleStatus, { label: string; badge: string }> = {
-  active: { label: 'فعال', badge: 'badge-success' },
-  partial: { label: 'جزئی', badge: 'badge-warning' },
-  inactive: { label: 'غیرفعال', badge: 'badge-muted' }
 };
 
 export function ModuleProgress({ modules }: { modules: ModuleItem[] }) {
@@ -52,13 +45,15 @@ export function ModuleProgress({ modules }: { modules: ModuleItem[] }) {
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15 }}>{m.name}</div>
+              <div style={{ fontWeight: 800, fontSize: 15 }}>{getModuleLabel(m.key)}</div>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginTop: 6, lineHeight: 1.6 }}>
                 {m.detail}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className={`badge ${statusMap[m.status].badge}`}>{statusMap[m.status].label}</span>
+              <span className={`badge ${getModuleStatusBadge(m.status)}`}>
+                {getModuleStatusLabel(m.status)}
+              </span>
               {m.done ? <span className="pill">تکمیل شد</span> : <span className="pill">در حال اجرا</span>}
             </div>
           </div>

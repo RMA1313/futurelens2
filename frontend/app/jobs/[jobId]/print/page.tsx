@@ -3,14 +3,9 @@ import './print-report.css';
 import { fetchReport } from '../../../../lib/api';
 import type { Report, Scenario } from '../../../../lib/schemas';
 import { formatId, formatNumber } from '../../../../lib/format';
+import { getModuleLabel, getModuleStatusLabel } from '../../../../lib/i18n/labels';
 import { PrintedAt } from './components/PrintedAt';
 import { PrintButton } from './components/PrintButton';
-
-const coverageLabel: Record<string, string> = {
-  active: 'فعال',
-  partial: 'جزئی / در حال بررسی',
-  inactive: 'غیرفعال'
-};
 
 const formatConfidence = (value?: number) => (value !== undefined ? formatNumber(value) : 'نامشخص');
 
@@ -214,7 +209,7 @@ export default async function PrintPage({ params }: PrintPageProps) {
                       {coverageEntries.length ? (
                         coverageEntries.map((entry) => (
                           <span key={entry.module} className={`coverage-badge ${entry.status}`}>
-                            {entry.module}: {coverageLabel[entry.status] ?? 'نامشخص'}
+                            {getModuleLabel(entry.module)}: {getModuleStatusLabel(entry.status)}
                           </span>
                         ))
                       ) : (
