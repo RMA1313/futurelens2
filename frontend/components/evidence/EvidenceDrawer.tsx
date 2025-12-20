@@ -1,6 +1,7 @@
 import React from 'react';
 import { EvidenceItem } from '../../lib/schemas';
 import { formatId } from '../../lib/format';
+import styles from './EvidenceDrawer.module.css';
 
 type Props = {
   evidence?: EvidenceItem[];
@@ -70,162 +71,129 @@ export function EvidenceDrawer({
   const compactList = evidence.slice(0, 2);
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: openId ? 'rgba(0,0,0,0.35)' : 'transparent',
-        pointerEvents: openId ? 'auto' : 'none',
-        transition: 'background var(--motion-mid) var(--ease-standard)',
-        zIndex: 50
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute',
-          insetInlineStart: 0,
-          top: 0,
-          bottom: 0,
-          width: '440px',
-          maxWidth: '90vw',
-          background: 'var(--color-surface)',
-          borderInlineEnd: '1px solid var(--color-border)',
-          transform: openId ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform var(--motion-mid) var(--ease-standard)',
-          display: 'grid',
-          gridTemplateRows: 'auto 1fr',
-          boxShadow: 'var(--shadow-strong)'
-        }}
-      >
-        <div
-          style={{
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--color-border)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontWeight: 800 }}>پنل شواهد</div>
-            {warningBadge ? <span className="badge badge-warning">{warningBadge}</span> : null}
-          </div>
-          <button className="button button-secondary" style={{ padding: '8px 12px' }} onClick={onClose}>
-            بستن
-          </button>
-        </div>
-        <div style={{ overflow: 'hidden', display: 'grid', gridTemplateColumns: '180px 1fr' }}>
-          <div style={{ borderInlineEnd: '1px solid var(--color-border)', padding: 12, display: 'grid', gap: 10 }}>
-            <input
-              className="input-field"
-              placeholder="جستجو در شواهد"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div style={{ overflowY: 'auto', maxHeight: '60vh', display: 'grid', gap: 6, paddingInlineEnd: 4 }}>
-              {filtered.map((e, index) => (
-                <button
-                  key={e.id}
-                  type="button"
-                  className="pill"
-                  style={{
-                    justifyContent: 'space-between',
-                    borderColor: e.id === openId ? 'rgba(106,216,255,0.9)' : 'var(--color-border)',
-                    background: e.id === openId ? 'rgba(106,216,255,0.08)' : 'transparent',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => onSelect(e.id)}
-                >
-                  <span>شاهد {formatId(String(index + 1))}</span>
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>گزیده</span>
-                </button>
-              ))}
-              {!filtered.length ? <div className="subhead">شاهدی با این عبارت پیدا نشد.</div> : null}
+    <div className={styles.drawerBackdrop} data-open={Boolean(openId)} onClick={onClose}>
+      <div className={styles.drawerPanel} data-open={Boolean(openId)} onClick={(event) => event.stopPropagation()}>
+        <div className={styles.panelShell}>
+          <div className={styles.header}>
+            <div className={styles.headerTitleGroup}>
+              <p className={styles.headerTitle}>پنل شواهد</p>
+            </div>
+            <div className={styles.headerActions}>
+              {warningBadge ? <span className="badge badge-warning">{warningBadge}</span> : null}
+              <button
+                type="button"
+                className={`button button-secondary ${styles.closeButton}`}
+                onClick={onClose}
+              >
+                بستن
+              </button>
             </div>
           </div>
-          <div style={{ padding: 14, overflowY: 'auto' }}>
-            {current ? (
-              <>
-                <div style={{ maxWidth: 520, lineHeight: 1.9 }}>
-                  <div style={{ fontWeight: 800, fontSize: 16 }}>خلاصه شاهد</div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-                    <span className="pill">{kindLabel[current.kind] ?? current.kind}</span>
-                    <span className="pill">دامنه: نامشخص</span>
-                    {current.confidence !== undefined ? (
-                      <span className="pill">اطمینان: {formatId(current.confidence.toFixed(2))}</span>
-                    ) : (
-                      <span className="pill">اطمینان: نامشخص</span>
-                    )}
-                  </div>
-                  <div style={{ marginTop: 10, fontSize: 14, color: 'var(--color-text)' }}>{synthesisShort}</div>
-                  <div style={{ marginTop: 14, fontWeight: 700 }}>چرا مهم است</div>
-                  <ul style={{ margin: '8px 0 0', paddingInlineStart: 18, color: 'var(--color-text)' }}>
-                    {whyItems.slice(0, 3).map((item) => (
-                      <li key={item} style={{ marginBottom: 6 }}>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <div style={{ marginTop: 16, fontWeight: 700 }}>شواهد مرتبط</div>
-                  <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-                    {compactList.length ? (
-                      compactList.map((item, index) => {
-                        const isActive = item.id === openId;
-                        const short = (item.snippet || item.content || '')
-                          .replace(/\s+/g, ' ')
-                          .trim()
-                          .slice(0, 120);
-                        return (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => onSelect(item.id)}
-                            className="card"
-                            style={{
-                              textAlign: 'right',
-                              borderColor: isActive ? 'rgba(106,216,255,0.9)' : 'var(--color-border)',
-                              background: isActive ? 'rgba(106,216,255,0.08)' : 'var(--color-surface)',
-                              padding: 10,
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <div style={{ fontWeight: 700, marginBottom: 4 }}>گزاره {formatId(String(index + 1))}</div>
-                            <div className="subhead">{short || 'متن قابل نمایش موجود نیست.'}</div>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="subhead">شاهد مرتبطی برای نمایش وجود ندارد.</div>
-                    )}
-                  </div>
+          <div className={styles.divider} />
+          <div className={styles.body}>
+            <div className={styles.controls}>
+              <div className={styles.searchWrapper}>
+                <input
+                  className={styles.searchInput}
+                  placeholder="جستجو در شواهد"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
+            </div>
+            <div className={styles.contentGrid}>
+              <div className={styles.listColumn}>
+                <div className={styles.listViewport}>
+                  {filtered.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`${styles.listItem} ${item.id === openId ? styles.listItemActive : ''}`}
+                      onClick={() => onSelect(item.id)}
+                      aria-pressed={item.id === openId}
+                    >
+                      <span className={styles.itemTitle}>شاهد {formatId(String(index + 1))}</span>
+                      <span className="subhead" style={{ fontSize: 12 }}>
+                        گزیده
+                      </span>
+                    </button>
+                  ))}
+                  {!filtered.length && <div className="subhead">شاهدی با این عبارت پیدا نشد.</div>}
                 </div>
-                {showFallback ? (
-                  <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
-                    <div className="card" style={{ background: 'var(--color-surface-2)' }}>
-                      <div style={{ fontWeight: 700, marginBottom: 6 }}>متن قابل استخراج نیست</div>
-                      <div className="subhead">
-                        متن این شاهد از فایل استخراج نشده است. لطفا نسخه متنی، PDF قابل جستجو یا فایل OCR شده را
-                        ارسال کنید.
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                        <button className="button button-secondary" type="button">
-                          آپلود نسخه متنی
-                        </button>
-                        <button className="button button-secondary" type="button">
-                          آپلود PDF قابل جستجو
-                        </button>
-                        <button className="button button-secondary" type="button">
-                          ارسال فایل OCR شده
-                        </button>
-                      </div>
+              </div>
+              <div className={styles.detailsSection}>
+                {current ? (
+                  <>
+                    <div className={styles.detailsHeader}>
+                      <p className={styles.detailsTitle}>خلاصه شاهد</p>
                     </div>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <div className="subhead">برای مشاهده جزئیات، یکی از شواهد را انتخاب کنید.</div>
+                    <div className={styles.pillRow}>
+                      <span className="pill">{kindLabel[current.kind] ?? current.kind}</span>
+                      <span className="pill">دامنه: نامشخص</span>
+                      {current.confidence !== undefined ? (
+                        <span className="pill">اطمینان: {formatId(current.confidence.toFixed(2))}</span>
+                      ) : (
+                        <span className="pill">اطمینان: نامشخص</span>
+                      )}
+                    </div>
+                    <div className={styles.detailsContent}>{synthesisShort}</div>
+                    <div className={styles.detailsSubtitle}>چرا مهم است</div>
+                    <ul className={styles.detailsList}>
+                      {whyItems.slice(0, 3).map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                    <div className={styles.detailsSubtitle}>شواهد مرتبط</div>
+                    <div className={styles.relatedList}>
+                      {compactList.length ? (
+                        compactList.map((entry, index) => {
+                          const short = (entry.snippet || entry.content || '')
+                            .replace(/\s+/g, ' ')
+                            .trim()
+                            .slice(0, 120);
+                          return (
+                            <button
+                              key={entry.id}
+                              type="button"
+                              className={styles.relatedCard}
+                              onClick={() => onSelect(entry.id)}
+                            >
+                              <p className={styles.relatedCardTitle}>
+                                گزاره {formatId(String(index + 1))}
+                              </p>
+                              <p className={styles.relatedCardSnippet}>{short || 'متن قابل نمایش موجود نیست.'}</p>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="subhead">شاهد مرتبطی برای نمایش وجود ندارد.</div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="subhead">برای مشاهده جزئیات، یکی از شواهد را انتخاب کنید.</div>
+                )}
+              </div>
+            </div>
+            {showFallback && current && (
+              <div className={styles.detailsFallback}>
+                <div className={styles.detailsFallbackTitle}>متن قابل استخراج نیست</div>
+                <div className="subhead">
+                  متن این شاهد از فایل استخراج نشده است. لطفا نسخه متنی، PDF قابل جستجو یا فایل OCR شده را
+                  ارسال کنید.
+                </div>
+                <div className={styles.fallbackActions}>
+                  <button className="button button-secondary" type="button">
+                    آپلود نسخه متنی
+                  </button>
+                  <button className="button button-secondary" type="button">
+                    آپلود PDF قابل جستجو
+                  </button>
+                  <button className="button button-secondary" type="button">
+                    ارسال فایل OCR شده
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         </div>

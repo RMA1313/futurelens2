@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React from 'react';
 import { BackgroundEffects } from '../system/BackgroundEffects';
 
@@ -16,20 +17,17 @@ export function AppShell({ title, subtitle, children }: ShellProps) {
       <div className="content-layer">
         <header className="nav-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: 'var(--color-accent)',
-                boxShadow: '0 0 0 8px rgba(106, 216, 255, 0.12)'
-              }}
-              aria-hidden
-            />
             <div>
-              <div style={{ fontWeight: 800, letterSpacing: '-0.2px' }}>فیوچرلنز</div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
-                اتاق وضعیت آینده‌پژوهی برای تصمیم‌های دقیق و شفاف
+              <div className="logo-text-row">
+                <Image
+                  src="/logo.gif"
+                  alt="???? ????? ????"
+                  className="logo-live-indicator"
+                  width={100}
+                  height={100}
+                  unoptimized
+                />
+                <div style={{ fontWeight: 800, letterSpacing: '-0.2px' }}>فیوچرلنز</div>
               </div>
             </div>
           </div>

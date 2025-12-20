@@ -44,24 +44,7 @@ export function JobHeader({ jobId, status, stage, progress, lastUpdate, demo }: 
             پیگیری روند تحلیل و میزان پیشرفت در هر مرحله.
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <span className="pill">شناسه تحلیل: {formatId(jobId)}</span>
-          <span className={`badge ${status === 'failed' ? 'badge-warning' : 'badge-accent'}`}>
-            {statusLabel}
-          </span>
-          <span className="pill">مرحله فعلی: {stageLabel}</span>
-          <span className="pill">آخرین به‌روزرسانی: {formatDateTime(lastUpdate)}</span>
-          {demo ? (
-            <span
-              className="badge badge-warning"
-              title="تحلیل در حالت نمایشی است و خروجی‌ها ممکن است کامل نباشند."
-            >
-              حالت نمایشی
-            </span>
-          ) : (
-            <span className="badge badge-success">اتصال پایدار</span>
-          )}
-        </div>
+        
       </div>
       <div style={{ marginTop: 18 }}>
         <div

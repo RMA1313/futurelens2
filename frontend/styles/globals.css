@@ -227,6 +227,24 @@
     backdrop-filter: blur(12px);
   }
 
+  .logo-text-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    direction: rtl;
+  }
+
+  .logo-live-indicator {
+    width: 5%;
+    height: 5%;
+    opacity: 0.6;
+    transition: opacity var(--motion-fast) var(--ease-standard);
+  }
+
+  .nav-bar:hover .logo-live-indicator {
+    opacity: 0.85;
+  }
+
   .form-grid {
     display: grid;
     gap: var(--space-4);

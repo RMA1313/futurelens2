@@ -7,9 +7,14 @@ import {
   OutputComposerSchema,
   Scenario,
   Steepd,
+  SteepdSchema,
   TrendItem,
   WeakSignalItem
 } from '../../schemas/modules';
+import { moduleExecutiveSummaryPrompt } from '../../prompts/model0-summary';
+import { moduleSteepdPrompt } from '../../prompts/model0-Steepd';
+import { callStructuredLLM } from '../../services/llm/client';
+import { z } from 'zod';
 
 type ExtractionQuality = { status: 'ok' | 'low'; message?: string };
 type UncertaintyStatusToken = 'ok' | 'low';
@@ -24,7 +29,7 @@ const STEEPD_CATEGORIES: (keyof Steepd)[] = [
   'defense'
 ];
 
-export function runModule8OutputComposer(params: {
+export async function runModule8OutputComposer(params: {
   classifier: DocumentClassifier;
   coverage: CoverageEntry[];
   clarifications: { questions: { id: string; module: string; question: string }[] };
@@ -35,7 +40,7 @@ export function runModule8OutputComposer(params: {
   scenarios: Scenario[];
   evidence: EvidenceItem[];
   extractionQuality?: ExtractionQuality;
-}): OutputComposer {
+}): Promise<OutputComposer> {
   const {
     classifier,
     coverage,
@@ -74,28 +79,13 @@ export function runModule8OutputComposer(params: {
   const hasContent = Boolean(
     trends.length || weakSignals.length || uncertainties.length || scenarios.length || coverage.length
   );
-  const executive_summary = hasContent
-    ? buildExecutiveSummary({
-        classifier,
-        trends,
-        weakSignals,
-        uncertainties,
-        scenarios,
-        uncertaintyReference
-      })
-    : '';
-  const executive_key_points = hasContent
-    ? buildExecutiveKeyPoints({
-        trends,
-        weakSignals,
-        uncertainties,
-        scenarios,
-        uncertaintyReference
-      })
-    : [];
-  const steepd = hasContent
-    ? buildSteepd({ trends, weakSignals, uncertainties, scenarios, clarifications, evidence })
-    : emptySteepd();
+  const summarySchema = z.object({
+    executive_summary: z.string(),
+    key_points: z.array(z.string()).default([])
+  });
+  const steepdSchema = z.object({
+    steepd: SteepdSchema
+  });
 
   const executive_brief = `این تحلیل بر اساس سند ${classifier.document_type} در حوزه ${classifier.domain} انجام شد. مهم‌ترین روند، «${trends[0]?.label ?? 'شناسایی اولیه روند'}» و نامطمئن‌ترین محرک «${uncertaintyReference}» است.`;
 
@@ -114,6 +104,54 @@ export function runModule8OutputComposer(params: {
       : 'سناریو: داده کافی برای تولید سناریو وجود ندارد',
     `سوالات روشن‌سازی: ${clarifications.questions.length}`
   ].join('\n');
+
+  const contentBundle = {
+    full_report,
+    trends,
+    weak_signals: weakSignals,
+    critical_uncertainties: uncertainties,
+    scenarios
+  };
+
+  const summaryResult = hasContent
+    ? await callStructuredLLM({
+        prompt: moduleExecutiveSummaryPrompt,
+        input: { content_bundle: contentBundle },
+        schema: summarySchema,
+        fallback: () => ({
+          executive_summary: buildExecutiveSummary({
+            classifier,
+            trends,
+            weakSignals,
+            uncertainties,
+            scenarios,
+            uncertaintyReference
+          }),
+          key_points: buildExecutiveKeyPoints({
+            trends,
+            weakSignals,
+            uncertainties,
+            scenarios,
+            uncertaintyReference
+          })
+        })
+      })
+    : { executive_summary: '', key_points: [] };
+  const executive_summary = cleanSentence(summaryResult.executive_summary);
+  const executive_key_points = buildUniquePoints(summaryResult.key_points, 2);
+
+  const steepdResult = hasContent
+    ? await callStructuredLLM({
+        prompt: moduleSteepdPrompt,
+        input: { content_bundle: contentBundle },
+        schema: steepdSchema,
+        fallback: () => ({ steepd: emptySteepd() })
+      })
+    : { steepd: emptySteepd() };
+  const steepd = STEEPD_CATEGORIES.reduce((acc, key) => {
+    acc[key] = buildUniquePoints(steepdResult.steepd[key]);
+    return acc;
+  }, {} as Steepd);
 
   const output = {
     executive_brief,

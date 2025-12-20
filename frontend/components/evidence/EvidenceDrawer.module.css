@@ -1,0 +1,334 @@
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: flex-start;
+  background: transparent;
+  pointer-events: none;
+  transition: background var(--motion-mid) var(--ease-standard);
+  z-index: 60;
+}
+
+.drawerBackdrop[data-open='true'] {
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+.drawerPanel {
+  position: relative;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: min(500px, 92vw);
+  margin: auto 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(16, 18, 26, 0.98), rgba(16, 18, 26, 0.92));
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(28px);
+  transform: translateX(100%);
+  transition: transform var(--motion-mid) var(--ease-standard);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawerBackdrop[data-open='true'] .drawerPanel {
+  transform: translateX(0);
+}
+
+.panelShell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px 12px;
+  background: rgba(16, 18, 26, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.headerTitleGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.headerTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.closeButton {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.body {
+  flex: 1;
+  padding: 18px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.controls {
+  width: 100%;
+}
+
+.searchWrapper {
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: border-color var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+  outline: none;
+}
+
+.searchInput:focus {
+  border-color: rgba(106, 216, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(106, 216, 255, 0.2);
+}
+
+.contentGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 880px) {
+  .contentGrid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+  }
+}
+
+.listColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.listViewport {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.01);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 42vh;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.listItem {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: right;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--ease-standard), border-color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-standard);
+  border-inline-start: 3px solid transparent;
+}
+
+.listItem:hover {
+  border-color: rgba(106, 216, 255, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateY(-1px);
+}
+
+.listItemActive {
+  border-color: rgba(106, 216, 255, 0.75);
+  border-inline-start-color: rgba(106, 216, 255, 0.75);
+  background: rgba(106, 216, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(106, 216, 255, 0.5);
+}
+
+.itemTitle {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.detailsSection {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.detailsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detailsTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detailsContent {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(232, 236, 245, 0.9);
+  margin-top: 2px;
+  min-height: 60px;
+}
+
+.detailsSubtitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(232, 236, 245, 0.78);
+  letter-spacing: 0.1px;
+}
+
+.detailsList {
+  margin: 0;
+  padding-inline-start: 18px;
+  color: rgba(232, 236, 245, 0.78);
+  font-size: 13px;
+  line-height: 1.6;
+  display: grid;
+  gap: 6px;
+}
+
+.relatedList {
+  display: grid;
+  gap: 10px;
+}
+
+.relatedCard {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: right;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard);
+}
+
+.relatedCard:hover {
+  border-color: rgba(106, 216, 255, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.relatedCardTitle {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.relatedCardSnippet {
+  margin: 0;
+  color: rgba(232, 236, 245, 0.7);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.detailsFallback {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.detailsFallbackTitle {
+  font-weight: 700;
+  margin: 0;
+}
+
+.fallbackActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media print {
+  .drawerBackdrop {
+    background: transparent;
+  }
+  .drawerPanel {
+    background: #fff;
+    color: #000;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    backdrop-filter: none;
+    transform: translateX(0) !important;
+    max-height: none;
+  }
+  .header,
+  .body,
+  .detailsSection,
+  .listViewport,
+  .relatedCard,
+  .detailsFallback {
+    background: #fff;
+    border-color: #ddd;
+  }
+  .headerActions,
+  .fallbackActions,
+  .detailsFallback,
+  .detailsFallback button,
+  .listItem,
+  .relatedCard,
+  .searchInput {
+    display: none;
+  }
+  .listViewport {
+    overflow: visible;
+  }
+}
