@@ -117,6 +117,13 @@ export const ScenarioSchema = z.object({
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
 
+export const ScenarioStatusSchema = z.object({
+  status: z.enum(['ok', 'insufficient_data']),
+  reason: z.string().optional(),
+  missing_information: z.array(z.string()).optional()
+});
+export type ScenarioStatus = z.infer<typeof ScenarioStatusSchema>;
+
 export const DocumentProfileSchema = z.object({
   document_type: z.string(),
   domain: z.string(),
@@ -137,6 +144,7 @@ export const ReportSchema = z.object({
     weak_signals: z.array(WeakSignalSchema).optional(),
     critical_uncertainties: z.array(UncertaintySchema).optional(),
     scenarios: z.array(ScenarioSchema).optional(),
+    scenarios_status: ScenarioStatusSchema.optional(),
     evidence: z.array(EvidenceItemSchema).optional(),
     extraction_quality: z
       .object({

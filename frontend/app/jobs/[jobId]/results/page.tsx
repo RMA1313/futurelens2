@@ -91,6 +91,13 @@ export default function ResultsPage() {
     load();
   }, [load]);
 
+  React.useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && report) {
+      const count = report.dashboard?.critical_uncertainties?.length ?? 0;
+      console.debug('[critical-uncertainties] report', { jobId, count });
+    }
+  }, [report, jobId]);
+
   const evidence: EvidenceItem[] = report?.dashboard?.evidence ?? [];
   const clarifications = report?.dashboard?.clarification_questions ?? [];
 
@@ -185,7 +192,6 @@ export default function ResultsPage() {
   return (
     <AppShell
       title="داشبورد نتایج"
-      subtitle="نمای کلی نتایج: پروفایل سند، پوشش، شواهد، روندها، عدم قطعیت و سناریوها."
     >
       <section className="card" style={{ borderColor: 'rgba(106,216,255,0.25)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>

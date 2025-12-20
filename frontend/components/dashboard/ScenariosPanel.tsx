@@ -59,12 +59,11 @@ export function ScenariosPanel({
       </div>
       <div className="section-grid">
         {filtered.map((s, index) => {
-          const isCompared = filter.compareIds.includes(changeKey);
-          const changeKey = s.id || `${hashScenario(s)}-${index}`;
-          const isChanged = changedIds?.has(changeKey) || (s.id ? changedIds?.has(s.id) : false);
+          const isCompared = filter.compareIds.includes((s.id || `${hashScenario(s)}-${index}`));
+          const isChanged = changedIds?.has((s.id || `${hashScenario(s)}-${index}`)) || (s.id ? changedIds?.has(s.id) : false);
           return (
             <div
-              key={changeKey}
+              key={s.id || `${hashScenario(s)}-${index}`}
               className="card"
               style={{
                 background: 'var(--color-surface-2)',
@@ -123,7 +122,7 @@ export function ScenariosPanel({
                   type="button"
                   className="button button-secondary"
                   style={{ padding: '8px 12px' }}
-                  onClick={() => filter.onToggleCompare(changeKey)}
+                  onClick={() => filter.onToggleCompare((s.id || `${hashScenario(s)}-${index}`))}
                 >
                   {isCompared ? 'خروج از مقایسه' : 'مقایسه'}
                 </button>

@@ -19,7 +19,7 @@ const kindLabel: Record<string, string> = {
 
 const labelLabel: Record<string, string> = {
   fact: 'واقعیت',
-  inference: 'استنتاج',
+  inference: 'استنباط',
   assumption: 'فرض'
 };
 
@@ -39,19 +39,35 @@ export function EvidenceDrawer({
   const current = evidence.find((e) => e.id === openId);
   const snippetRaw = current?.snippet ?? '';
   const contentRaw = current?.content ?? '';
-  const hasPdfNoise = /%PDF|xref|endobj|obj\s*<</i.test(snippetRaw) || /%PDF|xref|endobj|obj\s*<</i.test(contentRaw);
+  const hasPdfNoise =
+    /%PDF|xref|endobj|obj\s*<</i.test(snippetRaw) || /%PDF|xref|endobj|obj\s*<</i.test(contentRaw);
   const isMissingText = !snippetRaw && !contentRaw;
   const showFallback = hasPdfNoise || isMissingText;
   const snippetText = showFallback
-    ? 'متن این شاهد در این فایل قابل استخراج نیست.'
+    ? 'متن این شاهد در این فایل قابل استخراج نیست یا کیفیت استخراج پایین است.'
     : snippetRaw;
   const contentText = showFallback
-    ? 'برای بهبود نتیجه، نسخه متنی یا PDF قابل جستجو ارسال کنید.'
+    ? 'پیشنهاد می‌شود نسخه متنی، PDF قابل جستجو، یا فایل OCR شده را ارسال کنید.'
     : contentRaw;
   const warningBadge =
     extractionQuality?.status === 'low'
-      ? extractionQuality.message || 'کیفیت استخراج متن پایین است.'
+      ? extractionQuality.message || 'کیفیت استخراج متن پایین است و ممکن است شواهد ناقص باشند.'
       : null;
+  const synthesis =
+    contentText ||
+    snippetText ||
+    'برای این شاهد متن قابل اتکا پیدا نشد. لطفا منبع مناسب‌تری بارگذاری کنید.';
+  const synthesisShort = synthesis.replace(/\s+/g, ' ').trim().slice(0, 260);
+  const confidenceValue =
+    current?.confidence !== undefined ? formatId(current.confidence.toFixed(2)) : 'نامشخص';
+  const whyItems = [
+    `این شاهد از نوع ${kindLabel[current?.kind ?? 'claim'] ?? 'داده'} است و می‌تواند بر تصمیم‌های کلیدی اثر بگذارد.`,
+    `سطح اطمینان گزارش‌شده: ${confidenceValue}.`
+  ];
+  if (current?.label_type) {
+    whyItems.push(`ماهیت شاهد: ${labelLabel[current.label_type] ?? current.label_type}.`);
+  }
+  const compactList = evidence.slice(0, 2);
 
   return (
     <div
@@ -93,7 +109,7 @@ export function EvidenceDrawer({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontWeight: 800 }}>نمایش شواهد</div>
+            <div style={{ fontWeight: 800 }}>پنل شواهد</div>
             {warningBadge ? <span className="badge badge-warning">{warningBadge}</span> : null}
           </div>
           <button className="button button-secondary" style={{ padding: '8px 12px' }} onClick={onClose}>
@@ -109,68 +125,89 @@ export function EvidenceDrawer({
               onChange={(e) => setSearch(e.target.value)}
             />
             <div style={{ overflowY: 'auto', maxHeight: '60vh', display: 'grid', gap: 6, paddingInlineEnd: 4 }}>
-              {filtered.map((e) => (
+              {filtered.map((e, index) => (
                 <button
                   key={e.id}
                   type="button"
                   className="pill"
                   style={{
                     justifyContent: 'space-between',
-                    borderColor: e.id === openId ? 'rgba(106,216,255,0.6)' : 'var(--color-border)',
+                    borderColor: e.id === openId ? 'rgba(106,216,255,0.9)' : 'var(--color-border)',
+                    background: e.id === openId ? 'rgba(106,216,255,0.08)' : 'transparent',
                     cursor: 'pointer'
                   }}
                   onClick={() => onSelect(e.id)}
                 >
-                  <span>{formatId(e.id)}</span>
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>
-                    {formatId(e.chunk_id)}
-                  </span>
+                  <span>شاهد {formatId(String(index + 1))}</span>
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>گزیده</span>
                 </button>
               ))}
-              {!filtered.length ? <div className="subhead">موردی یافت نشد.</div> : null}
+              {!filtered.length ? <div className="subhead">شاهدی با این عبارت پیدا نشد.</div> : null}
             </div>
           </div>
           <div style={{ padding: 14, overflowY: 'auto' }}>
             {current ? (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <div>
-                    <div style={{ fontWeight: 800 }}>شناسه شاهد {formatId(current.id)}</div>
-                    <div className="subhead">شناسه قطعه: {formatId(current.chunk_id)}</div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ maxWidth: 520, lineHeight: 1.9 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16 }}>خلاصه شاهد</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                     <span className="pill">{kindLabel[current.kind] ?? current.kind}</span>
-                    {current.page !== undefined ? <span className="pill">صفحه {formatId(String(current.page))}</span> : null}
-                    {current.label_type ? (
-                      <span className="pill">{labelLabel[current.label_type] ?? current.label_type}</span>
-                    ) : null}
+                    <span className="pill">دامنه: نامشخص</span>
                     {current.confidence !== undefined ? (
-                      <span className="pill">اطمینان {formatId(current.confidence.toFixed(2))}</span>
-                    ) : null}
+                      <span className="pill">اطمینان: {formatId(current.confidence.toFixed(2))}</span>
+                    ) : (
+                      <span className="pill">اطمینان: نامشخص</span>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 10, fontSize: 14, color: 'var(--color-text)' }}>{synthesisShort}</div>
+                  <div style={{ marginTop: 14, fontWeight: 700 }}>چرا مهم است</div>
+                  <ul style={{ margin: '8px 0 0', paddingInlineStart: 18, color: 'var(--color-text)' }}>
+                    {whyItems.slice(0, 3).map((item) => (
+                      <li key={item} style={{ marginBottom: 6 }}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <div style={{ marginTop: 16, fontWeight: 700 }}>شواهد مرتبط</div>
+                  <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+                    {compactList.length ? (
+                      compactList.map((item, index) => {
+                        const isActive = item.id === openId;
+                        const short = (item.snippet || item.content || '')
+                          .replace(/\s+/g, ' ')
+                          .trim()
+                          .slice(0, 120);
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => onSelect(item.id)}
+                            className="card"
+                            style={{
+                              textAlign: 'right',
+                              borderColor: isActive ? 'rgba(106,216,255,0.9)' : 'var(--color-border)',
+                              background: isActive ? 'rgba(106,216,255,0.08)' : 'var(--color-surface)',
+                              padding: 10,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, marginBottom: 4 }}>گزاره {formatId(String(index + 1))}</div>
+                            <div className="subhead">{short || 'متن قابل نمایش موجود نیست.'}</div>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="subhead">شاهد مرتبطی برای نمایش وجود ندارد.</div>
+                    )}
                   </div>
                 </div>
-                <div style={{ marginTop: 10, fontSize: 13, color: 'var(--color-text-muted)' }}>
-                  {snippetText}
-                </div>
-                {contentText ? (
-                  <div
-                    style={{
-                      marginTop: 12,
-                      padding: 12,
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--color-surface-2)',
-                      lineHeight: 1.8
-                    }}
-                  >
-                    {contentText}
-                  </div>
-                ) : null}
                 {showFallback ? (
                   <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
                     <div className="card" style={{ background: 'var(--color-surface-2)' }}>
-                      <div style={{ fontWeight: 700, marginBottom: 6 }}>پیشنهاد برای ادامه</div>
+                      <div style={{ fontWeight: 700, marginBottom: 6 }}>متن قابل استخراج نیست</div>
                       <div className="subhead">
-                        نسخه متنی یا PDF قابل جستجو ارسال کنید تا شواهد دقیق‌تر نمایش داده شود.
+                        متن این شاهد از فایل استخراج نشده است. لطفا نسخه متنی، PDF قابل جستجو یا فایل OCR شده را
+                        ارسال کنید.
                       </div>
                       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                         <button className="button button-secondary" type="button">
@@ -188,7 +225,7 @@ export function EvidenceDrawer({
                 ) : null}
               </>
             ) : (
-              <div className="subhead">برای مشاهده، یک شاهد را انتخاب کنید.</div>
+              <div className="subhead">برای مشاهده جزئیات، یکی از شواهد را انتخاب کنید.</div>
             )}
           </div>
         </div>

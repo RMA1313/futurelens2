@@ -56,9 +56,6 @@ export function InputUploadForm() {
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <p className="helper-text">
-          ورودی فارسی و راست به چپ پشتیبانی می‌شود. می‌توانید متن یا فایل را ارسال کنید.
-        </p>
       </div>
 
       <div>

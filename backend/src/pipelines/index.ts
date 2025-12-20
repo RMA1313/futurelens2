@@ -10,6 +10,9 @@ import { runModule6Critic } from './modules/module6-critic';
 import { runModule7Scenarios } from './modules/module7-scenarios';
 import { runModule8OutputComposer } from './modules/module8-output';
 import { logger } from '../logger';
+import { inputPreprocess } from '../utils/input-preprocess';
+
+type ExtractionQuality = { status: 'ok' | 'low'; message?: string };
 
 export type PipelineProgressHandler = (job: JobData) => void;
 
@@ -32,8 +35,11 @@ export async function runPipeline(
     if (onProgress) onProgress(currentJob);
   };
 
-  const baseText = `${currentJob.input.text ?? ''}${appendClarificationAnswers(currentJob)}`;
-  const extractionQuality = assessExtractionQuality(currentJob.input.text ?? '');
+  const preprocessedInput = inputPreprocess(currentJob.input.text ?? '');
+  const clarificationAddendum = appendClarificationAnswers(currentJob);
+  // Ensure downstream stages only see the cleaned, normalized input before text assessment/chunking.
+  const baseText = inputPreprocess(`${preprocessedInput}${clarificationAddendum}`);
+  const extractionQuality = assessExtractionQuality(preprocessedInput);
 
   const baseMeta = {
     job_id: currentJob.id,
@@ -112,22 +118,24 @@ export async function runPipeline(
     withRetries(async () => runModule7Scenarios(engines.critical_uncertainties), 1)
   );
   currentJob.outputs.scenarios = scenarios;
-
+  const uncertaintiesStatus: 'ok' | 'low' =
+    (engines.critical_uncertainties?.length ?? 0) >= 2 ? 'ok' : 'low';
   // M8
   const composer = await runStage('module8-output', metaWithChunks, async () =>
     withRetries(
       async () =>
-        runModule8OutputComposer({
-          classifier,
-          coverage,
-          clarifications,
-          trends: engines.trends,
-          weakSignals: engines.weak_signals,
-          uncertainties: engines.critical_uncertainties,
-          scenarios,
-          evidence,
-          extractionQuality
-        }),
+          runModule8OutputComposer({
+            classifier,
+            coverage,
+            clarifications,
+            trends: engines.trends,
+            weakSignals: engines.weak_signals,
+            uncertainties: engines.critical_uncertainties,
+          uncertaintiesStatus,
+            scenarios,
+            evidence,
+            extractionQuality
+          }),
       1
     )
   );
@@ -175,7 +183,7 @@ async function runStage<T>(
   }
 }
 
-function assessExtractionQuality(text: string) {
+function assessExtractionQuality(text: string): ExtractionQuality {
   const cleaned = text.replace(/\s+/g, ' ').trim();
   const uniqueWords = new Set(
     cleaned

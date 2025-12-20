@@ -10,6 +10,10 @@ import {
   WeakSignalItem
 } from '../../schemas/modules';
 
+type ExtractionQuality = { status: 'ok' | 'low'; message?: string };
+type UncertaintyStatusToken = 'ok' | 'low';
+type ScenarioStatusShape = { status: 'ok' | 'insufficient_data'; reason?: string; missing_information?: string[] };
+
 export function runModule8OutputComposer(params: {
   classifier: DocumentClassifier;
   coverage: CoverageEntry[];
@@ -17,9 +21,10 @@ export function runModule8OutputComposer(params: {
   trends: TrendItem[];
   weakSignals: WeakSignalItem[];
   uncertainties: CriticalUncertainty[];
+  uncertaintiesStatus: UncertaintyStatusToken;
   scenarios: Scenario[];
   evidence: EvidenceItem[];
-  extractionQuality?: { status: 'ok' | 'low'; message?: string };
+  extractionQuality?: ExtractionQuality;
 }): OutputComposer {
   const {
     classifier,
@@ -28,12 +33,35 @@ export function runModule8OutputComposer(params: {
     trends,
     weakSignals,
     uncertainties,
+    uncertaintiesStatus,
     scenarios,
     evidence,
     extractionQuality
   } = params;
 
-  const executive_brief = `این تحلیل بر اساس سند ${classifier.document_type} در حوزه ${classifier.domain} انجام شد. مهم‌ترین روند، «${trends[0]?.label ?? 'شناسایی اولیه روند'}» و نامطمئن‌ترین محرک «${uncertainties[0]?.driver ?? 'محرک در دست بررسی'}» است.`;
+  const primaryUncertainty = uncertainties[0];
+  const uncertaintyReference =
+    primaryUncertainty?.driver ?? primaryUncertainty?.uncertainty_reason ?? 'محرک در دست بررسی';
+  const uncertaintyLabels = uncertainties.map((u) => u.driver ?? u.uncertainty_reason ?? '---');
+
+  const scenarioStatus: ScenarioStatusShape = scenarios.length
+    ? { status: 'ok' }
+    : {
+        status: 'insufficient_data',
+        reason: 'داده کافی برای تولید سناریو وجود ندارد.',
+        missing_information: ['حداقل دو عدم قطعیت بحرانی نیاز است.']
+      };
+
+  const criticalUncertaintiesStatus =
+    uncertaintiesStatus === 'ok'
+      ? { status: 'ok', missing_information: [] }
+      : {
+          status: 'insufficient_data',
+          reason: 'شواهد کافی برای استخراج عدم قطعیت‌ها در متن موجود نیست.',
+          missing_information: ['متن بیشتری مورد نیاز است.']
+        };
+
+  const executive_brief = `این تحلیل بر اساس سند ${classifier.document_type} در حوزه ${classifier.domain} انجام شد. مهم‌ترین روند، «${trends[0]?.label ?? 'شناسایی اولیه روند'}» و نامطمئن‌ترین محرک «${uncertaintyReference}» است.`;
 
   const coverageSummary = coverage
     .map((c) => `${c.module}: ${c.status}`)
@@ -44,7 +72,7 @@ export function runModule8OutputComposer(params: {
     `پوشش ماژول‌ها: ${coverageSummary}`,
     `روندها (${trends.length}): ${trends.map((t) => t.label).join(', ') || '---'}`,
     `نشانه‌های ضعیف (${weakSignals.length}): ${weakSignals.map((w) => w.signal).join(', ') || '---'}`,
-    `عدم قطعیت‌های بحرانی (${uncertainties.length}): ${uncertainties.map((u) => u.driver).join(', ') || '---'}`,
+    `عدم قطعیت‌های بحرانی (${uncertainties.length}): ${uncertaintyLabels.join(', ') || '---'}`,
     scenarios.length
       ? `سناریوها: ${scenarios.map((s) => s.title).join(' / ')}`
       : 'سناریو: داده کافی برای تولید سناریو وجود ندارد',
@@ -61,7 +89,9 @@ export function runModule8OutputComposer(params: {
       trends,
       weak_signals: weakSignals,
       critical_uncertainties: uncertainties,
+      critical_uncertainties_status: criticalUncertaintiesStatus,
       scenarios: scenarios.length ? scenarios : undefined,
+      scenarios_status: scenarioStatus,
       evidence,
       extraction_quality: extractionQuality
     }
