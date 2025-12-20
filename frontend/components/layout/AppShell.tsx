@@ -33,9 +33,6 @@ export function AppShell({ title, subtitle, children }: ShellProps) {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="badge badge-accent">داشبورد وضعیت تحلیل</span>
-          </div>
         </header>
         <main className="page-container">
           {title ? <h1 className="headline">{title}</h1> : null}

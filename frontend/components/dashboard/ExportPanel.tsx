@@ -16,9 +16,6 @@ export function ExportPanel({ report, jobId }: { report?: Report; jobId: string 
       <div className="headline" style={{ fontSize: 18 }}>
         دریافت خروجی
       </div>
-      <div className="subhead" style={{ marginBottom: 12 }}>
-        خروجی ساخت‌یافته و نسخه چاپی فارسی در دسترس است.
-      </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
         <button className="button button-primary" type="button" onClick={handleDownload} disabled={!report}>
           دانلود خروجی ساخت‌یافته

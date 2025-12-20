@@ -114,7 +114,7 @@ export function ScenariosPanel({
                 </div>
               ) : (
                 <div style={{ marginTop: 8, fontSize: 12, color: 'var(--color-text-muted)' }}>
-                  شاهدی برای این سناریو ثبت نشده است.
+                 
                 </div>
               )}
               <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>

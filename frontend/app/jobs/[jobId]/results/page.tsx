@@ -199,9 +199,6 @@ export default function ResultsPage() {
             <h2 className="headline" style={{ fontSize: 22 }}>
               جزئیات تحلیل
             </h2>
-            <p className="subhead">
-              شناسه تحلیل: {formatId(jobId)} | آخرین به‌روزرسانی: {formatDateTime(lastUpdated || 'در حال بارگذاری')}
-            </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <HealthStatus />
@@ -376,9 +373,6 @@ export default function ResultsPage() {
               <div className="card">
                 <div className="headline" style={{ fontSize: 18 }}>
                   روشن‌سازی و اجرای مجدد
-                </div>
-                <div className="subhead" style={{ marginBottom: 10 }}>
-                  پاسخ به سوالات روشن‌سازی باعث بهبود کیفیت تحلیل می‌شود.
                 </div>
                 <ClarificationPanel jobId={jobId} questions={clarifications} onSubmitted={startClarificationPolling} />
                 {clarificationState === 'updating' ? (

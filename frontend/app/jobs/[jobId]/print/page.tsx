@@ -1,155 +1,277 @@
-'use client';
+import './print-report.css';
 
-import React from 'react';
-import { useParams } from 'next/navigation';
 import { fetchReport } from '../../../../lib/api';
-import type { Report } from '../../../../lib/schemas';
+import type { Report, Scenario } from '../../../../lib/schemas';
 import { formatId, formatNumber } from '../../../../lib/format';
+import { PrintedAt } from './components/PrintedAt';
+import { PrintButton } from './components/PrintButton';
 
 const coverageLabel: Record<string, string> = {
   active: 'فعال',
-  partial: 'جزئی',
+  partial: 'جزئی / در حال بررسی',
   inactive: 'غیرفعال'
 };
 
-export default function PrintPage() {
-  const params = useParams<{ jobId: string }>();
-  const jobId = params.jobId;
-  const [report, setReport] = React.useState<Report | null>(null);
+const formatConfidence = (value?: number) => (value !== undefined ? formatNumber(value) : 'نامشخص');
 
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const rep = await fetchReport(jobId);
-        setReport(rep);
-      } catch (_) {
-        setReport(null);
-      }
-    })();
-  }, [jobId]);
+type PrintPageProps = {
+  params: { jobId: string };
+};
+
+export default async function PrintPage({ params }: PrintPageProps) {
+  const { jobId } = params;
+  let report: Report | null = null;
+  try {
+    report = await fetchReport(jobId);
+  } catch {
+    report = null;
+  }
+
+  const documentProfile = report?.dashboard.document_profile;
+  const coverageEntries = report?.dashboard.coverage ?? [];
+  const trends = report?.dashboard.trends ?? [];
+  const weakSignals = report?.dashboard.weak_signals ?? [];
+  const uncertainties = report?.dashboard.critical_uncertainties ?? [];
+  const scenarios = report?.dashboard.scenarios ?? [];
+
+  const insightSections = [
+    {
+      number: '01',
+      title: 'روندهای کلیدی',
+      description: 'الگوهایی که ساختار آینده را شکل می‌دهند.',
+      items: trends,
+      type: 'trend'
+    },
+    {
+      number: '02',
+      title: 'سیگنال‌های ضعیف',
+      description: 'نشانه‌های نوظهور که هنوز در لبه توجه قرار دارند.',
+      items: weakSignals,
+      type: 'signal'
+    },
+    {
+      number: '03',
+      title: 'عدم قطعیت‌های بحرانی',
+      description: 'سؤالاتی که مسیر تصمیم‌سازی را دگرگون می‌کنند.',
+      items: uncertainties,
+      type: 'uncertainty'
+    }
+  ] as const;
+
+  const renderInsightCard = (sectionType: typeof insightSections[number]['type'], item: any) => {
+    let title = '';
+    let body = '';
+    let meta = '';
+
+    if (sectionType === 'trend') {
+      title = item.label;
+      body = item.rationale ?? item.direction ?? 'توضیح تکمیلی ثبت نشده است.';
+      meta = item.category ? `${item.category}` : 'دسته‌بندی نامشخص';
+    } else if (sectionType === 'signal') {
+      title = item.signal;
+      body = item.rationale ?? item.evolution ?? 'روند تکمیلی در دست ثبت است.';
+      meta = 'سیگنال ضعیف';
+    } else {
+      title = item.driver;
+      body = item.impact ?? item.uncertainty_reason ?? 'اثرات احتمالی در حال بررسی است.';
+      meta = 'اثرات محتمل';
+    }
+
+    return (
+      <article key={`${sectionType}-${item.id}`} className="insight-card">
+        <header>
+          <div>
+            <p className="insight-card__title">{title}</p>
+            <p className="insight-card__meta">{meta}</p>
+          </div>
+          <span className="confidence-chip">{`اعتماد ${formatConfidence(item.confidence)}`}</span>
+        </header>
+        <p className="insight-card__body">{body}</p>
+      </article>
+    );
+  };
+
+  const renderScenario = (scenario: Scenario) => (
+    <article key={scenario.id} className="scenario-card print-section">
+      <div className="scenario-card__header">
+        <h3>{scenario.title}</h3>
+        <span className="confidence-chip">{`اعتماد ${formatConfidence(scenario.confidence)}`}</span>
+      </div>
+      <p className="scenario-card__summary">{scenario.summary}</p>
+      {scenario.implications?.length ? (
+        <div className="scenario-card__list">
+          <p className="list-label">پیامدهای کلیدی</p>
+          <ul>
+            {scenario.implications.map((implication) => (
+              <li key={implication}>{implication}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {scenario.indicators?.length ? (
+        <div className="scenario-card__list">
+          <p className="list-label">شاخص‌های پیگیری</p>
+          <ul>
+            {scenario.indicators.map((indicator) => (
+              <li key={indicator}>{indicator}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </article>
+  );
 
   return (
-    <div
-      className="print-page"
-      style={{
-        fontFamily: 'Vazirmatn, system-ui',
-        background: '#fff',
-        color: '#111',
-        padding: '24px',
-        direction: 'rtl'
-      }}
-    >
-      <style>{`
-        @media print {
-          .print-page {
-            padding: 0;
-          }
-          .print-section {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-        }
-        .print-section {
-          margin-bottom: 24px;
-        }
-        .print-muted {
-          color: #666;
-          font-size: 13px;
-          line-height: 1.8;
-        }
-        .print-box {
-          border: 1px solid #ddd;
-          border-radius: 10px;
-          padding: 12px 14px;
-          margin-top: 10px;
-        }
-      `}</style>
-      <h1 style={{ marginTop: 0 }}>گزارش چاپی فیوچرلنز</h1>
-      <p className="print-muted">شناسه تحلیل: {formatId(jobId)}</p>
-      {!report ? (
-        <p>گزارش هنوز آماده نشده است.</p>
-      ) : (
-        <>
-          <section className="print-section">
-            <h2>خلاصه اجرایی</h2>
-            <div className="print-box">
-              {report.executive_brief ? <p>{report.executive_brief}</p> : <p className="print-muted">خلاصه اجرایی موجود نیست.</p>}
-            </div>
-          </section>
+    <div className="print-shell" lang="fa">
+      <PrintButton />
+      <div className="print-page">
+        <header className="report-header">
+          <div className="report-header__branding">
+            <span className="brand-mark">FutureLens</span>
+            <h1>گزارش تحلیلی آینده‌پژوهی</h1>
+            <p className="section-subtitle" style={{ marginBottom: 0 }}>نسخه چاپی برای تصمیم‌سازان راهبردی</p>
+          </div>
+          <div className="header-meta">
+            <span>
+              شناسه تحلیل:
+              <strong>{formatId(jobId)}</strong>
+            </span>
+            <span>
+              زمان چاپ:
+              <PrintedAt />
+            </span>
+            <span>FutureLens</span>
+          </div>
+        </header>
 
-          <section className="print-section">
-            <h2>گزارش کامل</h2>
-            <div className="print-box">
-              {report.full_report ? <p>{report.full_report}</p> : <p className="print-muted">گزارش کامل موجود نیست.</p>}
-            </div>
-          </section>
+        <main className="report-content">
+          {!report ? (
+            <div className="empty-state">در حال دریافت گزارش برای چاپ...</div>
+          ) : (
+            <>
+              <section className="cover-block section print-section">
+                <div>
+                  <p className="cover-title">چشم‌انداز راهبردی آینده</p>
+                  <p className="cover-description">
+                    این بولتن با تمرکز بر چاپ حرفه‌ای، روندها، سیگنال‌ها و عدم قطعیت‌های کلیدی را در قالبی دقیق و آرام
+                    برای اتاق‌های تصمیم‌گیری ارائه می‌کند.
+                  </p>
+                </div>
+                <div className="cover-meta">
+                  <div>
+                    <span>حوزه</span>
+                    <span>{documentProfile?.domain ?? 'نامشخص'}</span>
+                  </div>
+                  <div>
+                    <span>افق زمانی</span>
+                    <span>{documentProfile?.horizon ?? 'نامشخص'}</span>
+                  </div>
+                  <div>
+                    <span>سطح تحلیل</span>
+                    <span>{documentProfile?.analytical_level ?? 'نامشخص'}</span>
+                  </div>
+                </div>
+              </section>
 
-          <section className="print-section">
-            <h2>پروفایل سند</h2>
-            <ul>
-              <li>نوع سند: {report.dashboard.document_profile?.document_type ?? 'نامشخص'}</li>
-              <li>حوزه: {report.dashboard.document_profile?.domain ?? 'نامشخص'}</li>
-              <li>افق زمانی: {report.dashboard.document_profile?.horizon ?? 'نامشخص'}</li>
-              <li>سطح تحلیل: {report.dashboard.document_profile?.analytical_level ?? 'نامشخص'}</li>
-            </ul>
-          </section>
+              <section className="section print-section">
+                <div className="section-heading">
+                  <span className="section-number">◉</span>
+                  <div>
+                    <p className="section-title">خلاصه اجرایی</p>
+                    <p className="section-subtitle">نکات کلیدی برای نشستی راهبردی</p>
+                  </div>
+                </div>
+                <div className="summary-card">
+                  <p>{report.executive_brief ?? 'خلاصه اجرایی هنوز آماده نشده است.'}</p>
+                </div>
+              </section>
 
-          <section className="print-section">
-            <h2>نقشه پوشش</h2>
-            <ul>
-              {(report.dashboard.coverage ?? []).map((c) => (
-                <li key={c.module}>
-                  {c.module} - {coverageLabel[c.status] ?? 'نامشخص'}
-                </li>
+              <section className="at-a-glance section print-section">
+                <div className="section-heading">
+                  <span className="section-number">✦</span>
+                  <div>
+                    <p className="section-title">در یک نگاه</p>
+                    <p className="section-subtitle">پروفایل سند و بازنمایی پوشش ماژول‌ها</p>
+                  </div>
+                </div>
+                <div className="glance-grid">
+                  <article className="glance-card">
+                    <h3>پروفایل سند</h3>
+                    <dl>
+                      <dt>نوع سند</dt>
+                      <dd>{documentProfile?.document_type ?? 'نامشخص'}</dd>
+                      <dt>دامنه</dt>
+                      <dd>{documentProfile?.domain ?? 'نامشخص'}</dd>
+                      <dt>افق زمانی</dt>
+                      <dd>{documentProfile?.horizon ?? 'نامشخص'}</dd>
+                      <dt>سطح تحلیل</dt>
+                      <dd>{documentProfile?.analytical_level ?? 'نامشخص'}</dd>
+                    </dl>
+                  </article>
+                  <article className="glance-card">
+                    <h3>پوشش ماژول‌ها</h3>
+                    <div className="coverage-badges">
+                      {coverageEntries.length ? (
+                        coverageEntries.map((entry) => (
+                          <span key={entry.module} className={`coverage-badge ${entry.status}`}>
+                            {entry.module}: {coverageLabel[entry.status] ?? 'نامشخص'}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="coverage-badge inactive">اطلاعات پوشش هنوز ثبت نشده است.</span>
+                      )}
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              {insightSections.map((section) => (
+                <section key={section.number} className="section print-section">
+                  <div className="section-heading">
+                    <span className="section-number">{section.number}</span>
+                    <div>
+                      <p className="section-title">{section.title}</p>
+                      <p className="section-subtitle">{section.description}</p>
+                    </div>
+                  </div>
+                  {section.items.length ? (
+                    <div className="insight-grid">
+                      {section.items.map((item) => renderInsightCard(section.type, item))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">داده‌ای برای این بخش ثبت نشده است.</div>
+                  )}
+                </section>
               ))}
-            </ul>
-          </section>
 
-          <section className="print-section">
-            <h2>روندها</h2>
-            <ul>
-              {(report.dashboard.trends ?? []).map((t) => (
-                <li key={t.id}>
-                  {t.label} | اطمینان: {t.confidence !== undefined ? formatNumber(t.confidence) : 'نامشخص'}
-                </li>
-              ))}
-            </ul>
-          </section>
+              <section className="scenarios-section print-section">
+                <div className="section-heading">
+                  <span className="section-number">04</span>
+                  <div>
+                    <p className="section-title">سناریوهای کلیدی</p>
+                    <p className="section-subtitle">ترکیبی از روایت‌های آینده برای هدایت تصمیم‌سازی</p>
+                  </div>
+                </div>
+                {scenarios.length ? (
+                  scenarios.map((scenario) => renderScenario(scenario))
+                ) : (
+                  <div className="empty-state">هنوز سناریویی برای نمایش ثبت نشده است.</div>
+                )}
+              </section>
+            </>
+          )}
+        </main>
 
-          <section className="print-section">
-            <h2>نشانه‌های ضعیف</h2>
-            <ul>
-              {(report.dashboard.weak_signals ?? []).map((w) => (
-                <li key={w.id}>
-                  {w.signal} | اطمینان: {w.confidence !== undefined ? formatNumber(w.confidence) : 'نامشخص'}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="print-section">
-            <h2>عدم قطعیت‌های کلیدی</h2>
-            <ul>
-              {(report.dashboard.critical_uncertainties ?? []).map((u) => (
-                <li key={u.id}>
-                  {u.driver} | اطمینان: {u.confidence !== undefined ? formatNumber(u.confidence) : 'نامشخص'}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <section className="print-section">
-            <h2>سناریوها</h2>
-            <ul>
-              {(report.dashboard.scenarios ?? []).map((s) => (
-                <li key={s.id}>
-                  {s.title} | {s.summary}
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+        <footer className="report-footer">
+          <span data-analysis={formatId(jobId)} className="analysis-id">
+            شناسه تحلیل
+          </span>
+          <span className="footer-meta">
+            بولتن تحلیلی FutureLens
+            <span className="page-counter" />
+          </span>
+        </footer>
+      </div>
     </div>
   );
 }
